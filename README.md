@@ -148,7 +148,25 @@ class PostController extends Controller
 
 ### Adding New Filters
 
-To add a new filter, simply add a new method in your custom filter class following the naming convention `{filterName}`, and register the filter name in the `$filters` array.
+To add a new filter, simply define a new method within your custom filter class. This method should adhere to PHP's **camelCase** naming convention and be named descriptively based on the filter's purpose. Once you've implemented the method, ensure to register its name in the `$filters` array to activate it. Here's how you can do it:
+
+```php
+namespace App\Filters;
+
+use Filterable\Filter;
+
+class PostFilter extends Filter
+{
+    protected array $filters = ['last_published_at'];
+
+    protected function lastPublishedAt(int $value): Builder
+    {
+        return $this->builder->where('last_published_at', $value);
+    }
+}
+```
+
+In this example, a new filter `lastPublishedAt` is created in the PostFilter class. The filter name `last_published_at` is registered in the `$filters` array.
 
 ### Caching
 
