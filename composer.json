@@ -1,0 +1,63 @@
+{
+    "name": "jerome/filterable",
+    "description": "Streamline dynamic Eloquent query filtering with seamless API request integration and advanced caching strategies.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "eloquent",
+        "filter",
+        "query"
+    ],
+    "authors": [
+        {
+            "name": "Jerome Thayananthajothy",
+            "email": "tjthavarshan@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Filterable\\": "src/Filterable",
+            "Filterable\\Database\\Factories\\": "database/factories"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Filterable\\Tests\\": "tests"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "illuminate/cache": "^10.0|^11.0",
+        "illuminate/contracts": "^10.0|^11.0",
+        "illuminate/database": "^10.0|^11.0",
+        "illuminate/http": "^10.0|^11.0",
+        "illuminate/support": "^10.0|^11.0",
+        "nesbot/carbon": "^2.72",
+        "spatie/laravel-package-tools": "^1.11"
+    },
+    "require-dev": {
+        "ext-json": "*",
+        "mockery/mockery": "^1.4",
+        "orchestra/testbench": "^7.0|^8.0",
+        "phpunit/phpunit": "^10.5"
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpunit/phpunit-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Filterable\\FilterableServiceProvider"
+            ]
+        }
+    },
+    "prefer-stable": true,
+    "minimum-stability": "dev"
+}
