@@ -22,3 +22,11 @@ Homestead.json
 /.vagrant
 .phpunit.result.cache
 .DS_Store
+
+build
+composer.lock
+.php_cs.cache
+coverage
+/.idea
+.php-cs-fixer.cache
+
