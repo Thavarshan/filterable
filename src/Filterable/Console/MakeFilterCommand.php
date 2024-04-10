@@ -3,10 +3,11 @@
 namespace Filterable\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Console\GeneratorCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'make:filter')]
-class MakeFilterCommand extends Command
+class MakeFilterCommand extends GeneratorCommand
 {
     /**
      * The console command name.
