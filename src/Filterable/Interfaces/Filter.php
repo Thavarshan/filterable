@@ -75,7 +75,7 @@ interface Filter
     /**
      * Get the extra options for the filter.
      *
-     * @return  array<string,
+     * @return array<string, mixed>
      */
     public function getOptions(): array;
 
@@ -103,4 +103,14 @@ interface Filter
      * @return self
      */
     public function setBuilder(Builder $builder): self;
+
+    /**
+     * Apply all relevant filters to the query and present it
+     * as a callable for use within a collection instance.
+     *
+     * @return Closure
+     *
+     * @see https://laravel.com/docs/10.x/collections#method-filter
+     */
+    public function asCollectionFilter(): Closure;
 }

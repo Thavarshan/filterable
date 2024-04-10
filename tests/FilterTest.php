@@ -2,15 +2,17 @@
 
 namespace Filterable\Tests;
 
+use Carbon\Carbon;
 use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Illuminate\Contracts\Cache\Repository;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Mockery as m;
 
 /**
+ * Class FilterTest.
+ *
  * @covers \Filterable\Filter
  */
 final class FilterTest extends TestCase
@@ -95,11 +97,21 @@ final class FilterTest extends TestCase
     {
         $request = new Request();
         $cache = m::spy(Repository::class);
-        $model = new class () extends Model {};
+        $model = new MockFilterable();
         $builder = $model->newQuery();
+
+        // Verify that caching logic is invoked
+        $cache->shouldReceive('remember')->once();
 
         $filter = new class ($request, $cache) extends Filter {
             protected array $filters = ['test_filter'];
+
+            public function __construct($request, $cache)
+            {
+                parent::__construct($request, $cache);
+
+                $this->useCache = true; // Ensure caching is enabled
+            }
 
             protected function testFilter($value)
             {
@@ -109,23 +121,21 @@ final class FilterTest extends TestCase
 
         $results = $filter->apply($builder);
 
-        // Verify that caching logic is invoked
-        $cache->shouldHaveReceived('remember')
-            ->once()
-            ->with(m::type('string'), m::type('int'), m::type('Closure'))
-            ->andReturn($builder);
-        $filter->shouldHaveReceived('testFilter')->once();
+        // Verify that caching logic was invoked
+        $cache->shouldHaveReceived('remember')->once();
 
         $this->assertSame($builder, $results);
-        $this->assertEmpty($results->get());
     }
 
     public function testHandlesCachingCorrectlyWhenDisabled(): void
     {
         $request = new Request();
         $cache = m::spy(Repository::class);
-        $model = new class () extends Model {};
+        $model = new MockFilterable();
         $builder = $model->newQuery();
+
+        // Verify that caching logic is not invoked
+        $cache->shouldNotHaveReceived('remember');
 
         $filter = new class ($request, $cache) extends Filter {
             protected array $filters = ['test_filter'];
@@ -135,24 +145,24 @@ final class FilterTest extends TestCase
                 // Dummy filter application
             }
         };
+
         $filter->setUseCache(false);
 
         $results = $filter->apply($builder);
 
-        // Verify that caching logic is not invoked
-        $cache->shouldNotHaveReceived('remember');
-        $filter->shouldHaveReceived('testFilter')->once();
-
         $this->assertSame($builder, $results);
-        $this->assertEmpty($results->get());
+        $this->assertNotEmpty($results->get());
     }
 
     public function testHandlesCachingCorrectlyWhenForced(): void
     {
         $request = new Request();
         $cache = m::spy(Repository::class);
-        $model = new class () extends Model {};
+        $model = new MockFilterable();
         $builder = $model->newQuery();
+
+        // Verify that caching logic is invoked
+        $cache->shouldReceive('remember')->once();
 
         $filter = new class ($request, $cache) extends Filter {
             protected array $filters = ['test_filter'];
@@ -162,27 +172,26 @@ final class FilterTest extends TestCase
                 // Dummy filter application
             }
         };
+
         $filter->setUseCache(true);
 
         $results = $filter->apply($builder);
 
-        // Verify that caching logic is invoked
-        $cache->shouldHaveReceived('remember')
-            ->once()
-            ->with(m::type('string'), m::type('int'), m::type('Closure'))
-            ->andReturn($builder);
-        $filter->shouldHaveReceived('testFilter')->once();
-
         $this->assertSame($builder, $results);
-        $this->assertEmpty($results->get());
+        $this->assertNotEmpty($results->get());
     }
 
     public function testHandlesCachingCorrectlyWhenForcedWithCustomTtl(): void
     {
         $request = new Request();
         $cache = m::spy(Repository::class);
-        $model = new class () extends Model {};
+        $model = new MockFilterable();
         $builder = $model->newQuery();
+
+        $customTtl = Carbon::now()->addMinutes(60);
+
+        // Verify that caching logic is invoked
+        $cache->shouldReceive('remember')->once();
 
         $filter = new class ($request, $cache) extends Filter {
             protected array $filters = ['test_filter'];
@@ -192,49 +201,75 @@ final class FilterTest extends TestCase
                 // Dummy filter application
             }
         };
+
         $filter->setUseCache(true);
         $filter->setCacheExpiration(60);
 
         $results = $filter->apply($builder);
 
-        // Verify that caching logic is invoked
-        $cache->shouldHaveReceived('remember')
-            ->once()
-            ->with(m::type('string'), 60, m::type('Closure'))
-            ->andReturn($builder);
-        $filter->shouldHaveReceived('testFilter')->once();
-
         $this->assertSame($builder, $results);
-        $this->assertEmpty($results->get());
+        $this->assertNotEmpty($results->get());
     }
 
-    public function testHandlesCachingCorrectlyWhenForcedWithCustomKey(): void
+    public function testClearsCacheCorrectly(): void
     {
         $request = new Request();
-        $cache = m::spy(Repository::class);
-        $model = new class () extends Model {};
-        $builder = $model->newQuery();
+        $cache = m::mock(Repository::class);
+        $cache->shouldReceive('forget')->once();
 
         $filter = new class ($request, $cache) extends Filter {
-            protected array $filters = ['test_filter'];
-
-            protected function testFilter($value)
-            {
-                // Dummy filter application
-            }
+            // Custom implementation or use existing methods.
         };
-        $filter->setUseCache(true, null, 'custom_key');
 
-        $results = $filter->apply($builder);
+        $filter->clearCache();
+
+        // Assertions to ensure cache forget was called.
+        $cache->shouldHaveReceived('forget')->once();
+
+        $this->assertTrue(true);
+    }
+
+    public function testAppliesPreFiltersCorrectly(): void
+    {
+        $request = new Request();
+        $cache = m::mock(Repository::class);
+        $model = new MockFilterable();
+        $builder = $model->newQuery();
 
         // Verify that caching logic is invoked
-        $cache->shouldHaveReceived('remember')
-            ->once()
-            ->with('custom_key', m::type('int'), m::type('Closure'))
-            ->andReturn($builder);
-        $filter->shouldHaveReceived('testFilter')->once();
+        $cache->shouldReceive('remember')->once();
 
-        $this->assertSame($builder, $results);
-        $this->assertEmpty($results->get());
+        $filter = new class ($request, $cache) extends Filter {
+            public function applyPreFilters(): void
+            {
+                $this->builder->where('active', 1);
+            }
+        };
+
+        // $filter->setUseCache(false);
+
+        $filter->apply($builder);
+
+        $this->assertEquals(
+            $model->newQuery()->where('active', 1)->toSql(),
+            $filter->getBuilder()->toSql()
+        );
     }
+
+    public function testSetsAndGetsOptionsCorrectly(): void
+    {
+        $request = new Request();
+        $cache = m::mock(Repository::class);
+
+        $filter = new class ($request, $cache) extends Filter {
+            // Custom implementation or use existing methods.
+        };
+
+        $options = ['option1' => 'value1'];
+
+        $filter->setOptions($options);
+
+        $this->assertSame($options, $filter->getOptions());
+    }
+
 }

@@ -69,7 +69,7 @@ class PostFilter extends Filter
 }
 ```
 
-### Implementing the Filterable and FilterableTrait
+### Implementing the `Filterable` Trait and `Filterable` Interface
 
 To use the `Filter` class in your Eloquent models, you need to implement the `Filterable` interface and use the `Filterable` trait. Here's an example for a `Post` model:
 
@@ -86,7 +86,7 @@ class Post extends Model implements FilterableInterface
 }
 ```
 
-> **Note**: The `Filterable` interface and `FilterableTrait` trait are included in the package and should be used in your models to enable filtering. The `Filterable` interface is optional but recommended for consistency.
+> **Note**: The `Filterable` interface and `Filterable` trait are included in the package and should be used in your models to enable filtering. The `Filterable` interface is optional but recommended for consistency.
 
 ### Applying Filters
 

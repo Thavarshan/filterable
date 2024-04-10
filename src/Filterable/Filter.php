@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+// phpcs:disable
 /**
  * Class Filter
  *
@@ -53,6 +54,7 @@ use Illuminate\Support\Str;
  *
  * @see \Filterable\Interfaces\Filter
  */
+// phpcs:enable
 abstract class Filter implements FilterInterface
 {
     /**
@@ -193,19 +195,15 @@ abstract class Filter implements FilterInterface
             return;
         }
 
-        $results = $this->cache->remember(
+        $this->cache->remember(
             $this->buildCacheKey(),
             Carbon::now()->addMinutes($this->getCacheExpiration()),
             function () {
                 $this->applyFiltersToQuery();
 
-                return $this->getBuilder();
+                return $this->getBuilder()->get();
             }
         );
-
-        if (! is_null($results)) {
-            $this->setBuilder($results);
-        }
     }
 
     /**
@@ -215,8 +213,8 @@ abstract class Filter implements FilterInterface
      */
     protected function applyFiltersToQuery(): void
     {
-        collect($this->getFilters())
-            ->filter(fn ($value) => ! is_null($value)
+        collect($this->getFilterables())
+            ->filter(fn (mixed $value) => (! is_string($value) && ! is_null($value))
                 && $value !== ''
                 && $value !== false
                 && $value !== [])
@@ -257,27 +255,17 @@ abstract class Filter implements FilterInterface
         // Create a unique cache key based on the filterables and any
         // other relevant context, such as authenticated user
         $userPart = optional($this->forUser)->getAuthIdentifier() ?? 'global';
-        $filtersPart = http_build_query($this->getFilters());
+        $filtersPart = http_build_query($this->getFilterables());
 
         return "filters:{$userPart}:{$filtersPart}";
     }
 
     /**
-     * Get the registered filters.
+     * Fetch all relevant filters from the request.
      *
      * @return array<string>
      */
     public function getFilterables(): array
-    {
-        return $this->filters;
-    }
-
-    /**
-     * Fetch all relevant filters from the request.
-     *
-     * @return array<string, mixed>
-     */
-    public function getFilters(): array
     {
         $filterKeys = array_merge(
             $this->filters,
@@ -292,6 +280,16 @@ abstract class Filter implements FilterInterface
         $this->currentFilters = array_keys($this->filterables);
 
         return $this->filterables;
+    }
+
+    /**
+     * Get the registered filters.
+     *
+     * @return array<string, mixed>
+     */
+    public function getFilters(): array
+    {
+        return $this->filters;
     }
 
     /**
@@ -360,6 +358,19 @@ abstract class Filter implements FilterInterface
     }
 
     /**
+     * Apply all relevant filters to the query and present it
+     * as a callable for use within a collection instance.
+     *
+     * @return Closure
+     *
+     * @see https://laravel.com/docs/10.x/collections#method-filter
+     */
+    public function asCollectionFilter(): Closure
+    {
+        return fn (mixed $items) => collect($this->getFilterables());
+    }
+
+    /**
      * Get expiration minutes for the cache.
      *
      * @return int
@@ -372,7 +383,7 @@ abstract class Filter implements FilterInterface
     /**
      * Set expiration minutes for the cache.
      *
-     * @param int $cacheExpiration Expiration minutes for the cache.
+     * @param int $value Expiration minutes for the cache.
      *
      * @return self
      */
@@ -386,7 +397,7 @@ abstract class Filter implements FilterInterface
     /**
      * Get the extra options for the filter.
      *
-     * @return  array<string,
+     * @return array<string, mixed>
      */
     public function getOptions(): array
     {
