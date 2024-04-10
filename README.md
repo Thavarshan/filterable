@@ -25,7 +25,7 @@ If you are using a version of Laravel that does not support package auto-discove
 'providers' => [
     // Other service providers...
 
-    Filterable\FilterableServiceProvider::class,
+    Filterable\Providers\FilterableServiceProvider::class,
 ],
 ```
 
@@ -95,7 +95,10 @@ You can apply filters to your Eloquent queries like so:
 ```php
 use App\Models\Post;
 
-$posts = (new PostFilter(request()))->apply(Post::query())->get();
+$filter = new PostFilter(request());
+$posts = Post::query()
+    ->filter($filter)
+    ->get();
 ```
 
 ### Applying Filters in Controllers
@@ -111,9 +114,11 @@ class PostController extends Controller
 {
     public function index(Request $request, PostFilter $filter)
     {
+        $query = Post::query()->filter($filter);
+
         $posts = $request->has('paginate')
-            ? $filter->paginate($request->input('per_page', 20))
-            : $filter->get();
+            ? $query->paginate($request->query('per_page', 20))
+            : $query->get();
 
         return response()->json($posts);
     }
@@ -135,9 +140,11 @@ class PostController extends Controller
     {
         $filter->forUser($request->user());
 
+        $query = Post::query()->filter($filter);
+
         $posts = $request->has('paginate')
-            ? $filter->paginate($request->input('per_page', 20))
-            : $filter->get();
+            ? $query->paginate($request->query('per_page', 20))
+            : $query->get();
 
         return response()->json($posts);
     }
@@ -181,19 +188,21 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\Post;
+use App\Filters\PostFilter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 
 class PostFilterTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function testFiltersPostsByStatus()
+    public function testFiltersPostsByStatus(): void
     {
         $activePost = Post::factory()->create(['status' => 'active']);
         $inactivePost = Post::factory()->create(['status' => 'inactive']);
 
-        $filter = new \App\Filters\PostFilter(new \Illuminate\Http\Request(['status' => 'active']));
-        $filteredPosts = $filter->apply(new \Illuminate\Database\Eloquent\Builder(Post::query()))->get();
+        $filter = new PostFilter(new Request(['status' => 'active']));
+        $filteredPosts = $filter->apply(Post::query())->get();
 
         $this->assertTrue($filteredPosts->contains($activePost));
         $this->assertFalse($filteredPosts->contains($inactivePost));
