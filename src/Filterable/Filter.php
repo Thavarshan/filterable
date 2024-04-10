@@ -214,7 +214,7 @@ abstract class Filter implements FilterInterface
     protected function applyFiltersToQuery(): void
     {
         collect($this->getFilterables())
-            ->filter(fn (mixed $value) => (! is_string($value) && ! is_null($value))
+            ->filter(fn (mixed $value) => $value !== null
                 && $value !== ''
                 && $value !== false
                 && $value !== [])

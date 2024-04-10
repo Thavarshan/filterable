@@ -47,7 +47,7 @@ final class FilterTest extends TestCase
         $builder = $model->newQuery();
 
         $cache = m::mock(Repository::class);
-        $cache->shouldReceive('remember')->andReturn($builder);
+        $cache->shouldNotReceive('remember')->andReturn($builder);
 
         // Assuming 'name' filter translates to a method call
         $filter = new MockFilter($request, $cache);
@@ -69,7 +69,7 @@ final class FilterTest extends TestCase
         $builder = $model->newQuery();
 
         $cache = m::mock(Repository::class);
-        $cache->shouldReceive('remember')->andReturn($builder);
+        $cache->shouldNotReceive('remember')->andReturn($builder);
 
         // Assuming 'name' filter translates to a method call
         $filter = new class ($request, $cache) extends Filter {
@@ -82,6 +82,7 @@ final class FilterTest extends TestCase
                 return $this->builder->where('name', 'LIKE', "%{$name}%");
             }
         };
+
         $filter->setUseCache(false);
 
         $results = $filter->apply($builder);
