@@ -28,6 +28,11 @@ final class FilterTest extends TestCase
             'name' => 'John Doe',
             'email' => 'john@example.com',
         ]);
+
+        MockFilterable::factory()->create([
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+        ]);
     }
 
     /**
@@ -59,12 +64,36 @@ final class FilterTest extends TestCase
             $model->newQuery()->where('name', 'LIKE', '%John Doe%')->toSql(),
             $results->toSql()
         );
+        $this->assertCount(1, $results->get());
+        $this->assertEquals('John Doe', $results->first()->name);
+    }
+
+    public function testAppliesFiltersManuallyThroughModel(): void
+    {
+        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
+        $model = new MockFilterable();
+        $builder = $model->newQuery();
+
+        $cache = m::mock(Repository::class);
+        $cache->shouldNotReceive('remember')->andReturn($builder);
+
+        // Assuming 'name' filter translates to a method call
+        $filter = new MockFilter($request, $cache);
+        $filter->setUseCache(false);
+
+        $results = $model->filter($filter);
+
+        $this->assertEquals(
+            $model->newQuery()->where('name', 'LIKE', '%John Doe%')->toSql(),
+            $results->toSql()
+        );
+        $this->assertCount(1, $results->get());
         $this->assertEquals('John Doe', $results->first()->name);
     }
 
     public function testAppliesFiltersDynamicallyBasedOnRequestWithCustomMethodNames(): void
     {
-        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
+        $request = Request::create('/?name=' . urlencode('Jane Doe'), 'GET');
         $model = new MockFilterable();
         $builder = $model->newQuery();
 
@@ -88,10 +117,11 @@ final class FilterTest extends TestCase
         $results = $filter->apply($builder);
 
         $this->assertEquals(
-            $model->newQuery()->where('name', 'LIKE', '%John Doe%')->toSql(),
+            $model->newQuery()->where('name', 'LIKE', '%Jane Doe%')->toSql(),
             $results->toSql()
         );
-        $this->assertEquals('John Doe', $results->first()->name);
+        $this->assertCount(1, $results->get());
+        $this->assertEquals('Jane Doe', $results->first()->name);
     }
 
     public function testHandlesCachingCorrectly(): void

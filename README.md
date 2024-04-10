@@ -119,7 +119,7 @@ class PostController extends Controller
 {
     public function index(Request $request, PostFilter $filter)
     {
-        $query = Post::query()->filter($filter);
+        $query = Post::filter($filter);
 
         $posts = $request->has('paginate')
             ? $query->paginate($request->query('per_page', 20))
@@ -145,7 +145,7 @@ class PostController extends Controller
     {
         $filter->forUser($request->user());
 
-        $query = Post::query()->filter($filter);
+        $query = Post::filter($filter);
 
         $posts = $request->has('paginate')
             ? $query->paginate($request->query('per_page', 20))
@@ -207,7 +207,7 @@ class PostFilterTest extends TestCase
         $inactivePost = Post::factory()->create(['status' => 'inactive']);
 
         $filter = new PostFilter(new Request(['status' => 'active']));
-        $filteredPosts = $filter->apply(Post::query())->get();
+        $filteredPosts = Post::filter($filter)->get();
 
         $this->assertTrue($filteredPosts->contains($activePost));
         $this->assertFalse($filteredPosts->contains($inactivePost));

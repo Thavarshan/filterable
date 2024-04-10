@@ -11,15 +11,19 @@ trait Filterable
     /**
      * Apply all relevant space filters.
      *
-     * @param \Filterable\Interfaces\Filter $filters
-     * @param array|null                    $options
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param \Filterable\Interfaces\Filter         $filters
+     * @param array|null                            $options
      *
      * @return \Illuminate\Database\Eloquent\Builder $query
      *
      * @throws Exception
      */
-    public function filter(Filter $filters, ?array $options = []): Builder
-    {
-        return $filters->apply($this->newModelQuery(), $options);
+    public function scopeFilter(
+        Builder $query,
+        Filter $filters,
+        ?array $options = []
+    ): Builder {
+        return $filters->apply($query, $options);
     }
 }
