@@ -1,6 +1,12 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.0.4...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.0.5...HEAD)
+
+## [v1.0.5](https://github.com/Thavarshan/filterable/compare/v1.0.4...v1.0.5) - 2024-04-10
+
+### Changed
+
+- Implement filter scope for Eloquent Models to use with `Filterable` trait
 
 ## [v1.0.4](https://github.com/Thavarshan/filterable/compare/v1.0.3...v1.0.4) - 2024-04-10
 
