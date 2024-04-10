@@ -77,7 +77,7 @@ To use the `Filter` class in your Eloquent models, you need to implement the `Fi
 namespace App\Models;
 
 use Filterable\Interface\Filterable as FilterableInterface;
-use Filterable\Trait\Filterable as FilterableTrait;
+use Filterable\Traits\Filterable as FilterableTrait;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model implements FilterableInterface
