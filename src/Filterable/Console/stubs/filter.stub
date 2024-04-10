@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Builder;
 class {{ class }} extends Filter
 {
     /**
-     * Attributes to filters from.
+     * Registered filters to operate upon.
      *
-     * @var array
+     * @var array<string>
      */
-    protected $filters = ['filter'];
+    protected array $filters = ['filter'];
 
     /**
      * Filter the query by a given attribute value.
