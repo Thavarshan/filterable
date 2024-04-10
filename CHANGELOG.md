@@ -1,6 +1,12 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.0.3...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.0.4...HEAD)
+
+## [v1.0.4](https://github.com/Thavarshan/filterable/compare/v1.0.3...v1.0.4) - 2024-04-10
+
+### Fixed
+
+- Fix "Fatal Error: Type of `App\Filters\EventFilter::$filters` Must Be Array" (#8)
 
 ## [v1.0.3](https://github.com/Thavarshan/filterable/compare/v1.0.2...v1.0.3) - 2024-04-10
 
