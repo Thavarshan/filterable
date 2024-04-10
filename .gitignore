@@ -21,6 +21,7 @@ Homestead.yaml
 Homestead.json
 /.vagrant
 .phpunit.result.cache
+/.phpunit.cache
 .DS_Store
 
 build
@@ -29,4 +30,3 @@ composer.lock
 coverage
 /.idea
 .php-cs-fixer.cache
-
