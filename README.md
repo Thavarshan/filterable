@@ -1,8 +1,8 @@
 # Filterable
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
-[![Tests](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml/badge.svg?branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml)
-[![Check & fix styling](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml/badge.svg?branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml)
+[![Tests](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml/badge.svg?label=Tests&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml)
+[![Check & fix styling](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml/badge.svg?label=code%20style&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
 
 The `Filter` class provides a flexible and powerful way to apply dynamic filters to Laravel's Eloquent queries. It supports caching, user-specific filtering, and custom filter methods, making it suitable for a wide range of applications, from simple blogs to complex data-driven platforms.
