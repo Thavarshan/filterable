@@ -32,7 +32,7 @@
         "illuminate/database": "^10.0|^11.0",
         "illuminate/http": "^10.0|^11.0",
         "illuminate/support": "^10.0|^11.0",
-        "nesbot/carbon": "^2.72",
+        "nesbot/carbon": "^2.72|^3.0",
         "spatie/laravel-package-tools": "^1.11"
     },
     "require-dev": {
