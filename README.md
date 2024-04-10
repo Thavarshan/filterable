@@ -1,7 +1,7 @@
 # Filterable
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
-[![Tests](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml/badge.svg?label=Tests&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml)
+[![Tests](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml/badge.svg?label=tests&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml)
 [![Check & fix styling](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml/badge.svg?label=code%20style&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
 
