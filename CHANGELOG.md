@@ -8,6 +8,6 @@
 
 - Fix `nesbot/carbon` dependency version issue (#3)
 
-## v1.0.0 (10-04-2024)
+## v1.0.0 (2024-04-10)
 
 Initial release.
