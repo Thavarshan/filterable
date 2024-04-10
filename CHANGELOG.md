@@ -6,19 +6,19 @@
 
 ### Fixed
 
-- Fix for Argument Acceptance in make:filter Command (#6)
+- Fix for Argument Acceptance in `make:filter` Command [#6](https://github.com/Thavarshan/filterable/issues/6)
 
 ## [v1.0.2](https://github.com/Thavarshan/filterable/compare/v1.0.1...v1.0.2) - 2024-04-10
 
 ### Fixed
 
-- Fix Service Provider Namespace in composer.json (#5)
+- Fix Service Provider Namespace in `composer.json` [#5](https://github.com/Thavarshan/filterable/issues/5)
 
 ## [v1.0.1 (2024-04-10)](https://github.com/Thavarshan/filterable/compare/v1.0.1...v1.0.0)
 
 ### Fixed
 
-- Fix `nesbot/carbon` dependency version issue (#3)
+- Fix `nesbot/carbon` dependency version issue [#3](https://github.com/Thavarshan/filterable/issues/3)
 
 ## v1.0.0 (2024-04-10)
 
