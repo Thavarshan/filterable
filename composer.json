@@ -8,10 +8,16 @@
         "filter",
         "query"
     ],
+    "homepage": "https://github.com/Thavarshan/filterable",
+    "support": {
+        "issues": "https://github.com/Thavarshan/filterable/issues",
+        "source": "https://github.com/Thavarshan/filterable"
+    },
     "authors": [
         {
             "name": "Jerome Thayananthajothy",
-            "email": "tjthavarshan@gmail.com"
+            "email": "tjthavarshan@gmail.com",
+            "homepage": "https://thavarshan.com"
         }
     ],
     "autoload": {
@@ -62,7 +68,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Filterable\\FilterableServiceProvider"
+                "Filterable\\Providers\\FilterableServiceProvider"
             ]
         }
     },
