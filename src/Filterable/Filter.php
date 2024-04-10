@@ -130,14 +130,14 @@ abstract class Filter implements FilterInterface
     /**
      * Create a new filter instance.
      *
-     * @param \Illuminate\Http\Request               $request
-     * @param \Illuminate\Contracts\Cache\Repository $cache
+     * @param \Illuminate\Http\Request                    $request
+     * @param \Illuminate\Contracts\Cache\Repository|null $cache
      *
      * @return void
      */
     public function __construct(
         protected Request $request,
-        protected Cache $cache
+        protected ?Cache $cache = null
     ) {
     }
 
@@ -195,7 +195,7 @@ abstract class Filter implements FilterInterface
             return;
         }
 
-        $this->cache->remember(
+        $this->getCacheHandler()->remember(
             $this->buildCacheKey(),
             Carbon::now()->addMinutes($this->getCacheExpiration()),
             function () {
@@ -464,5 +464,33 @@ abstract class Filter implements FilterInterface
     public function clearCache(): void
     {
         $this->cache->forget($this->buildCacheKey());
+    }
+
+    /**
+     * Get the value of cache
+     *
+     * @return \Illuminate\Contracts\Cache\Repository
+     */
+    public function getCacheHandler(): Cache
+    {
+        if (is_null($this->cache)) {
+            $this->cache = cache();
+        }
+
+        return $this->cache;
+    }
+
+    /**
+     * Set the value of cache
+     *
+     * @param \Illuminate\Contracts\Cache\Repository $cache
+     *
+     * @return self
+     */
+    public function setCacheHandler(Cache $cache)
+    {
+        $this->cache = $cache;
+
+        return $this;
     }
 }

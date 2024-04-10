@@ -95,7 +95,7 @@ You can apply filters to your Eloquent queries like so:
 ```php
 use App\Models\Post;
 
-$filter = new PostFilter(request());
+$filter = new PostFilter(request(), cache());
 $posts = Post::query()
     ->filter($filter)
     ->get();
