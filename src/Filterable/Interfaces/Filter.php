@@ -1,13 +1,11 @@
 <?php
 
-namespace Filterable;
+namespace Filterable\Interfaces;
 
 use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\Request;
 
 // phpcs:disable
 /**
