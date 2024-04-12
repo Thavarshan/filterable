@@ -48,7 +48,7 @@ You can create a new filter class using the following Artisan command:
 php artisan make:filter PostFilter
 ```
 
-This command will generate a new filter class in the `app/Filters` directory. You can then customize this class to add your own filter methods.
+This command will generate a new filter class in the `app/Filters` directory. You can then customise this class to add your own filter methods.
 
 The `Filter` class is a base class that provides the core functionality for applying filters to Eloquent queries. You can extend this class to create your own filter classes tailored to your specific models. To use the `Filter` class, you first need to extend it to create your own filter class tailored to your specific model. Here's a basic example for a `Post` model:
 
@@ -73,6 +73,26 @@ class PostFilter extends Filter
     }
 }
 ```
+
+To add a new filter, simply define a new method within your custom filter class. This method should adhere to PHP's **camelCase** naming convention and be named descriptively based on the filter's purpose. Once you've implemented the method, ensure to register its name in the `$filters` array to activate it. Here's how you can do it:
+
+```php
+namespace App\Filters;
+
+use Filterable\Filter;
+
+class PostFilter extends Filter
+{
+    protected array $filters = ['last_published_at'];
+
+    protected function lastPublishedAt(int $value): Builder
+    {
+        return $this->builder->where('last_published_at', $value);
+    }
+}
+```
+
+In this example, a new filter `lastPublishedAt` is created in the PostFilter class. The filter name `last_published_at` is registered in the `$filters` array.
 
 ### Implementing the `Filterable` Trait and `Filterable` Interface
 
@@ -154,11 +174,40 @@ class PostController extends Controller
 }
 ```
 
+### Applying Pre-Filters to run before the main filters
+
+You can also apply pre-filters that run before the main filters. The `registerPreFilters` method sets the pre-filters that should be applied:
+
+```php
+use App\Models\Post;
+use App\Filters\PostFilter;
+use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
+
+class PostController extends Controller
+{
+    public function index(Request $request, PostFilter $filter)
+    {
+        $filter->registerPreFilters(function (Builder $query) {
+            return $query->where('published', true);
+        });
+
+        $query = Post::filter($filter);
+
+        $posts = $request->has('paginate')
+            ? $query->paginate($request->query('per_page', 20))
+            : $query->get();
+
+        return response()->json($posts);
+    }
+}
+```
+
 ## Customization
 
-### Adding New Filters
+### Caching
 
-To add a new filter, simply define a new method within your custom filter class. This method should adhere to PHP's **camelCase** naming convention and be named descriptively based on the filter's purpose. Once you've implemented the method, ensure to register its name in the `$filters` array to activate it. Here's how you can do it:
+In your filter class, you can control caching by using the `setUseCache` method. Set the `$useCache` property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
 
 ```php
 namespace App\Filters;
@@ -174,13 +223,13 @@ class PostFilter extends Filter
         return $this->builder->where('last_published_at', $value);
     }
 }
+
+$filter = new PostFilter(request(), cache());
+
+// Control caching
+$filter->setUseCache(true);
+$filter->cacheExpiration = 1440; // Cache duration in minutes
 ```
-
-In this example, a new filter `lastPublishedAt` is created in the PostFilter class. The filter name `last_published_at` is registered in the `$filters` array.
-
-### Caching
-
-Enable or disable caching by setting the `$useCache` property in your filter class. Customize the cache duration by adjusting the `$cacheExpiration` property.
 
 ## Testing
 

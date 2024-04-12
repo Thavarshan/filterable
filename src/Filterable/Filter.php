@@ -9,6 +9,7 @@ use Filterable\Interfaces\Filter as FilterInterface;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -67,6 +68,10 @@ abstract class Filter implements FilterInterface
     /**
      * The pre-filters to apply to the query.
      *
+     * These are filters to be applied before the actual filterables are executed.
+     * So when the Query Builder is run, the results have has already been
+     * filtered and then the actual filters are applied.
+     *
      * @var Closure|null
      */
     protected ?Closure $preFilters = null;
@@ -101,6 +106,8 @@ abstract class Filter implements FilterInterface
 
     /**
      * Extra options for the filter.
+     *
+     * These options are for the developers use and are not used internally.
      *
      * @var array<string, mixed>
      */
@@ -155,6 +162,7 @@ abstract class Filter implements FilterInterface
         $this->setOptions($options)->setBuilder($builder);
 
         // Apply the filter for a specific user if it's set
+        // Basically to filter resutls by 'user_id' column
         $this->applyForUserFilter();
 
         // Apply any predefined filters
@@ -168,7 +176,7 @@ abstract class Filter implements FilterInterface
     }
 
     /**
-     * Apply the for user filter.
+     * Filter the query to only include records for the authenticated user.
      *
      * @return void
      */
@@ -189,7 +197,7 @@ abstract class Filter implements FilterInterface
      */
     protected function applyFilterables(): void
     {
-        if (! $this->useCache) {
+        if (! $this->shouldUseCache()) {
             $this->applyFiltersToQuery();
 
             return;
@@ -198,7 +206,7 @@ abstract class Filter implements FilterInterface
         $this->getCacheHandler()->remember(
             $this->buildCacheKey(),
             Carbon::now()->addMinutes($this->getCacheExpiration()),
-            function () {
+            function (): Collection {
                 $this->applyFiltersToQuery();
 
                 return $this->getBuilder()->get();
@@ -207,7 +215,7 @@ abstract class Filter implements FilterInterface
     }
 
     /**
-     * Apply the filters to the query.
+     * Execute the query builder query functionality with the filters applied.
      *
      * @return void
      */
@@ -219,30 +227,41 @@ abstract class Filter implements FilterInterface
                 && $value !== false
                 && $value !== [])
             ->each(function ($value, $filter) {
-                $this->applyFilterable($value, $filter);
+                $this->applyFilterable($filter, $value);
             });
     }
 
     /**
      * Apply a filter to the query.
      *
-     * @param mixed  $value
      * @param string $filter
+     * @param mixed  $value
      *
      * @return void
      */
-    protected function applyFilterable(mixed $value, string $filter): void
+    protected function applyFilterable(string $filter, mixed $value): void
     {
-        $filter = $this->filterMethodMap[$filter]
-            ?? Str::camel($filter);
+        $filter = $this->makeFilterIntoMethodName($filter);
 
         if (! method_exists($this, $filter)) {
             throw new BadMethodCallException(
-                sprintf('Method %s does not exist on %s', $filter, static::class)
+                sprintf('Method [%s] does not exist on %s', $filter, static::class)
             );
         }
 
         call_user_func([$this, $filter], $value);
+    }
+
+    /**
+     * Make the filter into a method name.
+     *
+     * @param string $filter
+     *
+     * @return string
+     */
+    protected function makeFilterIntoMethodName(string $filter): string
+    {
+        return $this->filterMethodMap[$filter] ?? Str::camel($filter);
     }
 
     /**
@@ -261,17 +280,18 @@ abstract class Filter implements FilterInterface
     }
 
     /**
-     * Fetch all relevant filters from the request.
+     * Fetch all relevant filters (key, value) from the request.
      *
      * @return array<string>
      */
     public function getFilterables(): array
     {
         $filterKeys = array_merge(
-            $this->filters,
+            $this->getFilters(),
             array_keys($this->filterMethodMap ?? [])
         );
 
+        // Will contains key, value pairs of the filters
         $this->filterables = array_merge(
             $this->filterables,
             array_filter($this->request->only($filterKeys))
@@ -487,10 +507,20 @@ abstract class Filter implements FilterInterface
      *
      * @return self
      */
-    public function setCacheHandler(Cache $cache)
+    public function setCacheHandler(Cache $cache): self
     {
         $this->cache = $cache;
 
         return $this;
+    }
+
+    /**
+     * Get indicates if caching should be used.
+     *
+     * @return bool
+     */
+    public function shouldUseCache(): bool
+    {
+        return $this->useCache;
     }
 }
