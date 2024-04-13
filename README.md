@@ -203,6 +203,30 @@ class PostController extends Controller
 }
 ```
 
+### Using Filters on the Frontend
+
+You can use filters on the frontend by sending a request with query parameters. For example, to filter posts by status, you can send a request like this:
+
+```typescript
+const response = await fetch('/posts?status=active');
+
+const data = await response.json();
+```
+
+This request will return all posts with the status `active`.
+
+You can also string together all the filters you want to apply. For example, to filter posts by status and category, you can send a request like this:
+
+```typescript
+const response = await fetch('/posts?status=active&category_id=2');
+
+const data = await response.json();
+```
+
+This request will return all posts with the status `active` and associated with the category of ID `2`.
+
+> **Note**: Any query parameters that do not match the filter names will be ignored.
+
 ## Customization
 
 ### Caching
