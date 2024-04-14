@@ -1,6 +1,13 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.0.5...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/1.0.6...HEAD)
+
+## [1.0.6](https://github.com/Thavarshan/filterable/compare/v1.0.5...1.0.6) - 2024-04-14
+
+### Changed
+
+- Refactor `useCache` instance property to static
+- Refactor `setUseCache` instance method to `enableCaching` static method for use in service provider classes
 
 ## [v1.0.5](https://github.com/Thavarshan/filterable/compare/v1.0.4...v1.0.5) - 2024-04-10
 
