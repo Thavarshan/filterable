@@ -231,7 +231,21 @@ This request will return all posts with the status `active` and associated with 
 
 ### Caching
 
-In your filter class, you can control caching by using the `setUseCache` method. Set the `$useCache` property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
+In your filter class, you can control caching by using the `enableCaching` static method. Set the `$useCache` static property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
+
+```php
+// AppServiceProvider.php
+
+/**
+ * Bootstrap any application services.
+ *
+ * @return void
+ */
+public function boot(): void
+{
+    Filter::enableCaching(true); // Control caching
+}
+```
 
 ```php
 namespace App\Filters;
@@ -251,8 +265,7 @@ class PostFilter extends Filter
 $filter = new PostFilter(request(), cache());
 
 // Control caching
-$filter->setUseCache(true);
-$filter->cacheExpiration = 1440; // Cache duration in minutes
+$filter->setCacheExpiration(1440); // Cache duration in minutes
 ```
 
 ## Testing

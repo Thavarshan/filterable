@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
  * This class is used to apply filters to an Eloquent query builder instance.
  * It provides methods to set and apply filters, cache the results, and filter results for a specific authenticated user.
  *
- * @package Filterable
+ * @package Filterable\Interfaces
  *
  * @property \Illuminate\Database\Eloquent\Builder           $builder         The Eloquent builder instance.
  * @property \Illuminate\Http\Request                        $request         The current HTTP request.
@@ -174,9 +174,9 @@ interface Filter
      *
      * @param bool $useCache
      *
-     * @return self
+     * @return void
      */
-    public function setUseCache(bool $useCache): self;
+    public static function enableCaching(bool $useCache): void;
 
     /**
      * Clear the cache.
@@ -206,5 +206,5 @@ interface Filter
      *
      * @return bool
      */
-    public function shouldUseCache(): bool;
+    public static function shouldUseCache(): bool;
 }

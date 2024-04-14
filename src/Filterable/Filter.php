@@ -118,7 +118,7 @@ abstract class Filter implements FilterInterface
      *
      * @var bool
      */
-    protected bool $useCache = true;
+    protected static bool $useCache = true;
 
     /**
      * Expiration minutes for the cache.
@@ -197,7 +197,7 @@ abstract class Filter implements FilterInterface
      */
     protected function applyFilterables(): void
     {
-        if (! $this->shouldUseCache()) {
+        if (! self::shouldUseCache()) {
             $this->applyFiltersToQuery();
 
             return;
@@ -467,13 +467,11 @@ abstract class Filter implements FilterInterface
      *
      * @param bool $useCache
      *
-     * @return self
+     * @return void
      */
-    public function setUseCache(bool $useCache): self
+    public static function enableCaching(bool $useCache): void
     {
-        $this->useCache = $useCache;
-
-        return $this;
+        self::$useCache = $useCache;
     }
 
     /**
@@ -519,8 +517,8 @@ abstract class Filter implements FilterInterface
      *
      * @return bool
      */
-    public function shouldUseCache(): bool
+    public static function shouldUseCache(): bool
     {
-        return $this->useCache;
+        return self::$useCache;
     }
 }

@@ -42,11 +42,15 @@ final class FilterTest extends TestCase
     {
         m::close();
 
+        Filter::enableCaching(false);
+
         parent::tearDown();
     }
 
     public function testAppliesFiltersDynamicallyBasedOnRequest(): void
     {
+        Filter::enableCaching(false);
+
         $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
         $model = new MockFilterable();
         $builder = $model->newQuery();
@@ -56,7 +60,6 @@ final class FilterTest extends TestCase
 
         // Assuming 'name' filter translates to a method call
         $filter = new MockFilter($request, $cache);
-        $filter->setUseCache(false);
 
         $results = $filter->apply($builder);
 
@@ -70,6 +73,8 @@ final class FilterTest extends TestCase
 
     public function testAppliesFiltersManuallyThroughModel(): void
     {
+        Filter::enableCaching(false);
+
         $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
         $model = new MockFilterable();
         $builder = $model->newQuery();
@@ -79,7 +84,6 @@ final class FilterTest extends TestCase
 
         // Assuming 'name' filter translates to a method call
         $filter = new MockFilter($request, $cache);
-        $filter->setUseCache(false);
 
         $results = $model->filter($filter);
 
@@ -93,6 +97,8 @@ final class FilterTest extends TestCase
 
     public function testAppliesFiltersDynamicallyBasedOnRequestWithCustomMethodNames(): void
     {
+        Filter::enableCaching(false);
+
         $request = Request::create('/?name=' . urlencode('Jane Doe'), 'GET');
         $model = new MockFilterable();
         $builder = $model->newQuery();
@@ -112,8 +118,6 @@ final class FilterTest extends TestCase
             }
         };
 
-        $filter->setUseCache(false);
-
         $results = $filter->apply($builder);
 
         $this->assertEquals(
@@ -126,6 +130,8 @@ final class FilterTest extends TestCase
 
     public function testHandlesCachingCorrectly(): void
     {
+        Filter::enableCaching(true);
+
         $request = new Request();
         $cache = m::spy(Repository::class);
         $model = new MockFilterable();
@@ -140,8 +146,6 @@ final class FilterTest extends TestCase
             public function __construct($request, $cache)
             {
                 parent::__construct($request, $cache);
-
-                $this->useCache = true; // Ensure caching is enabled
             }
 
             protected function testFilter($value)
@@ -160,6 +164,8 @@ final class FilterTest extends TestCase
 
     public function testHandlesCachingCorrectlyWhenDisabled(): void
     {
+        Filter::enableCaching(false);
+
         $request = new Request();
         $cache = m::spy(Repository::class);
         $model = new MockFilterable();
@@ -177,8 +183,6 @@ final class FilterTest extends TestCase
             }
         };
 
-        $filter->setUseCache(false);
-
         $results = $filter->apply($builder);
 
         $this->assertSame($builder, $results);
@@ -187,6 +191,8 @@ final class FilterTest extends TestCase
 
     public function testHandlesCachingCorrectlyWhenForced(): void
     {
+        Filter::enableCaching(true);
+
         $request = new Request();
         $cache = m::spy(Repository::class);
         $model = new MockFilterable();
@@ -204,8 +210,6 @@ final class FilterTest extends TestCase
             }
         };
 
-        $filter->setUseCache(true);
-
         $results = $filter->apply($builder);
 
         $this->assertSame($builder, $results);
@@ -214,6 +218,8 @@ final class FilterTest extends TestCase
 
     public function testHandlesCachingCorrectlyWhenForcedWithCustomTtl(): void
     {
+        Filter::enableCaching(true);
+
         $request = new Request();
         $cache = m::spy(Repository::class);
         $model = new MockFilterable();
@@ -233,7 +239,6 @@ final class FilterTest extends TestCase
             }
         };
 
-        $filter->setUseCache(true);
         $filter->setCacheExpiration(60);
 
         $results = $filter->apply($builder);
@@ -244,6 +249,8 @@ final class FilterTest extends TestCase
 
     public function testClearsCacheCorrectly(): void
     {
+        Filter::enableCaching(true);
+
         $request = new Request();
         $cache = m::mock(Repository::class);
         $cache->shouldReceive('forget')->once();
@@ -262,6 +269,8 @@ final class FilterTest extends TestCase
 
     public function testAppliesPreFiltersCorrectly(): void
     {
+        Filter::enableCaching(true);
+
         $request = new Request();
         $cache = m::mock(Repository::class);
         $model = new MockFilterable();
@@ -277,7 +286,7 @@ final class FilterTest extends TestCase
             }
         };
 
-        // $filter->setUseCache(false);
+        // $filter->enableCaching(false);
 
         $filter->apply($builder);
 

@@ -5,6 +5,11 @@ namespace Filterable\Interfaces;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Interface Filterable
+ *
+ * @package Filterable\Interfaces
+ */
 interface Handler
 {
     /**
