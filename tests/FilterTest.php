@@ -269,7 +269,7 @@ final class FilterTest extends TestCase
 
     public function testAppliesPreFiltersCorrectly(): void
     {
-        Filter::enableCaching(true);
+        Filter::enableCaching();
 
         $request = new Request();
         $cache = m::mock(Repository::class);

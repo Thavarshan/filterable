@@ -9,45 +9,38 @@ use Illuminate\Database\Eloquent\Builder;
 
 // phpcs:disable
 /**
- * Class Filter
+ * Interface Filter
  *
- * This class is used to apply filters to an Eloquent query builder instance.
- * It provides methods to set and apply filters, cache the results, and filter results for a specific authenticated user.
+ * Defines the contract for classes that implement advanced filtering mechanisms on Eloquent query builders.
+ * This interface allows for dynamic application of filters, handling of user-specific criteria, pre-filter application,
+ * caching of results, and retrieval and modification of filtering options.
  *
- * @package Filterable\Interfaces
+ * Methods in this interface support setting and applying filters to a Builder instance, managing cache settings,
+ * and manipulating filter parameters dynamically based on HTTP requests or predefined conditions.
  *
- * @property \Illuminate\Database\Eloquent\Builder           $builder         The Eloquent builder instance.
- * @property \Illuminate\Http\Request                        $request         The current HTTP request.
- * @property \Illuminate\Contracts\Cache\Repository          $cache           The cache repository instance.
- * @property array<string>                                   $filters         The registered filters.
- * @property array<string, mixed>                            $filterables     The current filters being applied.
- * @property array<string>                                   $currentFilters  The current filters being applied.
- * @property int                                             $cacheExpiration The cache expiration time.
- * @property \Illuminate\Contracts\Auth\Authenticatable|null $forUser         The authenticated user to filter by.
- * @property Closure|null                                    $preFilters      The pre-filters to apply to the query.
- * @property array<string, mixed>                            $options         Extra options for the filter.
- * @property array<string, string>                           $filterMethodMap The map of filter methods.
+ * @package Filterable
  *
- * @method void          applyFilterable(mixed $value, string $filter) Applies a specific filter to the query.
- * @method void          applyForUserFilter()                          Applies a filter for a specific user if it's set.
- * @method void          applyPreFilters()                             Applies the pre-filters to the query.
- * @method void          applyFilterables()                            Applies filters to the query and caches the results if caching is enabled.
- * @method string        buildCacheKey()                               Builds a unique cache key based on the filters and the authenticated user.
- * @method array<string> getFilterables()                              Returns the registered filters.
- * @method array<string> getFilters()                                  Returns the filters from the request.
- * @method self          appendFilterable(string $key, mixed $value)   Adds a filterable value to the filter.
- * @method self          forUser(?Authenticatable $user)               Sets the authenticated user to filter by.
- * @method array<string> getCurrentFilters()                           Returns the current filters being applied.
- * @method self          registerPreFilters(Closure $callback)         Registers pre-filters to apply to the query.
- * @method int           getCacheExpiration()                          Gets the cache expiration time.
- * @method self          setCacheExpiration(int $value)                Sets the cache expiration time.
- * @method void          apply(Builder $builder)                       The main entry point to apply all filters to the builder instance.
- * @method array<string> getOptions()                                  Gets extra options for the filter.
- * @method self          setOptions(array<string, mixed> $options)     Sets extra options for the filter.
- * @method Builder       getBuilder()                                  Gets the Eloquent builder instance.
- * @method self          setBuilder(Builder $builder)                  Sets the Eloquent builder instance.
+ * @method        void    apply(Builder $builder, ?array $options = []) Main method to apply all filters to the provided builder instance.
+ * @method        array   getFilterables()                              Fetches all filters and their current values that can be applied to the query.
+ * @method        array   getFilters()                                  Retrieves a list of all registered filter keys.
+ * @method        self    appendFilterable(string $key, mixed $value)   Appends or updates a specific filter value.
+ * @method        self    forUser(?Authenticatable $user)               Sets an authenticated user to filter the queries by user-specific criteria.
+ * @method        array   getCurrentFilters()                           Returns a list of the currently active filters.
+ * @method        self    registerPreFilters(Closure $callback)         Registers a closure with pre-filters to be applied before the main filters.
+ * @method        Closure asCollectionFilter()                          Provides a Closure that filters a collection based on the current filter settings.
+ * @method        int     getCacheExpiration()                          Returns the currently set cache expiration time in minutes.
+ * @method        self    setCacheExpiration(int $value)                Sets the cache expiration time in minutes.
+ * @method        array   getOptions()                                  Retrieves additional options set for filtering.
+ * @method        self    setOptions(array $options)                    Sets additional options for filtering behavior.
+ * @method        Builder getBuilder()                                  Gets the current Eloquent query builder instance.
+ * @method        self    setBuilder(Builder $builder)                  Sets the Eloquent query builder instance.
+ * @method static void    enableCaching(bool $useCache = true)          Enables or disables caching of filter results.
+ * @method        void    clearCache()                                  Clears the cache for the current filter settings.
+ * @method        Cache   getCacheHandler()                             Retrieves the cache handler instance.
+ * @method        self    setCacheHandler(Cache $cache)                 Sets the cache handler instance.
+ * @method static bool    shouldUseCache()                              Determines if caching should be used for filter results.
  *
- * @see \Filterable\Interfaces\Filter
+ * @see \Illuminate\Database\Eloquent\Builder
  */
 // phpcs:enable
 interface Filter

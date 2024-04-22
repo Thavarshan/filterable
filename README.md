@@ -243,7 +243,10 @@ In your filter class, you can control caching by using the `enableCaching` stati
  */
 public function boot(): void
 {
-    Filter::enableCaching(true); // Control caching
+    // Control caching globally through methods...
+    Filter::enableCaching();
+    // or
+    Filter::disableCaching()
 }
 ```
 
