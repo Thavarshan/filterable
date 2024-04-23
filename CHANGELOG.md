@@ -12,6 +12,10 @@
   - **Conditional Log Statements**: Added conditional logging throughout the filter application process to provide granular insights into key actions and decisions. This feature is designed to help in pinpointing issues and understanding filter behavior under various conditions.
   - **Unit Tests for Logging**: Extended the test suite to include tests verifying that logging behaves as expected under different configurations, ensuring that the new functionality is robust and reliable.
 
+### Changed
+
+- Deprecated instance method `setUseCache()` in favor of static method `enableCaching()` for improved consistency and clarity. This change aligns with the existing static property `useCache` and enhances the discoverability of caching-related functionality. [#12](https://github.com/Thavarshan/filterable/pull/12)
+
 ### Fixed
 
 - Minor bug fixes and performance optimizations to enhance stability and efficiency.
