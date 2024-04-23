@@ -12,50 +12,49 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Psr\Log\LoggerInterface;
 
 // phpcs:disable
 /**
- * Provides a flexible mechanism for applying filters to an Eloquent query builder based on HTTP request parameters.
- * It supports dynamic filter application, user-specific filtering, pre-filtering, caching of results, and offers
- * additional configuration options for advanced filtering needs.
+ * Provides a comprehensive solution for applying dynamic and user-specific filters to Eloquent query builders based on HTTP request parameters.
+ * It supports caching of results, pre-filtering, and dynamically invokes filter methods based on the filter keys provided in the request.
  *
- * Functionalities include setting up the query builder, managing filters, handling user-based filters, applying pre-filters,
- * caching query results with custom expiration, and dynamic method invocation based on filter names.
+ * This class is designed to enhance query customization while optimizing query execution through caching mechanisms and detailed logging capabilities,
+ * making it suitable for applications requiring dynamic data retrieval based on user input.
  *
  * @package Filterable
  *
- * @property Builder               $builder         The Eloquent builder instance.
- * @property Request               $request         The current HTTP request.
- * @property Cache|null            $cache           The cache repository instance, if caching is enabled.
- * @property array<string>         $filters         List of registered filter keys.
- * @property array<string, mixed>  $filterables     The current filters being applied with their values.
- * @property array<string>         $currentFilters  List of filters currently being applied.
- * @property int                   $cacheExpiration Cache expiration time in minutes.
- * @property Authenticatable|null  $forUser         The authenticated user, if filtering is to be user-specific.
- * @property Closure|null          $preFilters      Closure containing pre-filters to be applied before the main filters.
- * @property array<string, mixed>  $options         Additional options for filter behavior.
- * @property array<string, string> $filterMethodMap Mapping of filter keys to method names for dynamic invocation.
+ * @property \Illuminate\Database\Eloquent\Builder           $builder         The Eloquent builder instance to apply filters to.
+ * @property \Illuminate\Http\Request                        $request         The current HTTP request, providing context and parameters for filters.
+ * @property \Illuminate\Contracts\Cache\Repository|null     $cache           Optional caching mechanism to store and retrieve results of filtered queries.
+ * @property \Psr\Log\LoggerInterface|null                   $logger          Optional logging interface to log the process and results of filter applications.
+ * @property array<string>                                   $filters         Registered filter keys that this class can handle.
+ * @property array<string, mixed>                            $filterables     Active filters with their respective values extracted from the request.
+ * @property array<string>                                   $currentFilters  A list of filters currently being applied to the query.
+ * @property int                                             $cacheExpiration Duration in minutes for which the query results should be cached.
+ * @property \Illuminate\Contracts\Auth\Authenticatable|null $forUser         Optional authenticated user to apply user-specific filters.
+ * @property Closure|null                                    $preFilters      Optional pre-filters to apply before the main filters for additional query manipulation.
+ * @property array<string, mixed>                            $options         Miscellaneous options that can affect the behavior of the filter processing.
+ * @property array<string, string>                           $filterMethodMap Mapping of filter keys to their corresponding method names for dynamic invocation.
  *
- * @method void                 applyFilterable(mixed $value, string $filter) Applies a specific filter to the query.
- * @method void                 applyForUserFilter()                          Applies user-specific filters based on the authenticated user.
- * @method void                 applyPreFilters()                             Applies pre-defined pre-filters to the query.
- * @method void                 applyFilterables()                            Applies all active filters to the query and handles caching if enabled.
- * @method string               buildCacheKey()                               Generates a unique cache key based on active filters and user context.
- * @method array<string>        getFilterables()                              Fetches filters and their values from the request and registers them.
- * @method array<string>        getFilters()                                  Retrieves filter keys from the request.
- * @method self                 appendFilterable(string $key, mixed $value)   Adds or updates a filter and its value.
- * @method self                 forUser(?Authenticatable $user)               Sets the authenticated user for user-specific filtering.
- * @method array<string>        getCurrentFilters()                           Returns a list of currently applied filters.
- * @method self                 registerPreFilters(Closure $callback)         Registers a closure containing pre-filters.
- * @method int                  getCacheExpiration()                          Retrieves the current cache expiration setting.
- * @method self                 setCacheExpiration(int $value)                Sets the cache expiration time.
- * @method void                 apply(Builder $builder)                       Main method to apply all filters to the provided builder instance.
- * @method array<string, mixed> getOptions()                                  Retrieves additional filter options.
- * @method self                 setOptions(array<string, mixed> $options)     Sets additional filter options.
- * @method Builder              getBuilder()                                  Retrieves the current Eloquent builder instance.
- * @method self                 setBuilder(Builder $builder)                  Sets the Eloquent builder instance.
- *
- * @see \Filterable\Interfaces\Filter
+ * @method void                                  applyFilterable(mixed $value, string $filter)              Dynamically applies a filter to the builder based on a specified method.
+ * @method void                                  applyForUserFilter()                                       Applies filters specific to the authenticated user if available.
+ * @method void                                  applyPreFilters()                                          Applies any registered pre-filters to the builder before main filters.
+ * @method void                                  applyFilterables()                                         Applies all active filters to the builder and caches the results if caching is enabled.
+ * @method string                                buildCacheKey()                                            Constructs a unique cache key based on active filters and user context, used for caching results.
+ * @method array<string>                         getFilterables()                                           Retrieves all currently active filters along with their values.
+ * @method array<string>                         getFilters()                                               Fetches a list of all registered filter keys from the request.
+ * @method self                                  appendFilterable(string $key, mixed $value)                Adds or updates a filterable value to the current set of active filters.
+ * @method self                                  forUser(?Authenticatable $user)                            Sets an authenticated user for user-specific filtering.
+ * @method array<string>                         getCurrentFilters()                                        Returns a list of all filters that are currently being applied.
+ * @method self                                  registerPreFilters(\Closure $callback)                     Registers a closure containing pre-filters for the query.
+ * @method int                                   getCacheExpiration()                                       Gets the currently set cache expiration time.
+ * @method self                                  setCacheExpiration(int $value)                             Sets the cache expiration time.
+ * @method void                                  apply(\Illuminate\Database\Eloquent\Builder $builder)      Main method to apply all registered and valid filters to the builder.
+ * @method array<string, mixed>                  getOptions()                                               Retrieves additional options for the filter.
+ * @method self                                  setOptions(array<string, mixed> $options)                  Sets additional options that affect filtering behavior.
+ * @method \Illuminate\Database\Eloquent\Builder getBuilder()                                               Gets the current Eloquent builder instance.
+ * @method self                                  setBuilder(\Illuminate\Database\Eloquent\Builder $builder) Sets the builder instance on which filters will be applied.
  */
 // phpcs:enable
 abstract class Filter implements FilterInterface
@@ -123,6 +122,13 @@ abstract class Filter implements FilterInterface
     protected static bool $useCache = true;
 
     /**
+     * Indicates if logging should be used.
+     *
+     * @var bool
+     */
+    protected static bool $shouldLog = false;
+
+    /**
      * Expiration minutes for the cache.
      *
      * @var int
@@ -141,12 +147,14 @@ abstract class Filter implements FilterInterface
      *
      * @param \Illuminate\Http\Request                    $request
      * @param \Illuminate\Contracts\Cache\Repository|null $cache
+     * @param \Psr\Log\LoggerInterface|null               $logger
      *
      * @return void
      */
     public function __construct(
         protected Request $request,
-        protected ?Cache $cache = null
+        protected ?Cache $cache = null,
+        protected ?LoggerInterface $logger = null
     ) {
     }
 
@@ -184,12 +192,21 @@ abstract class Filter implements FilterInterface
      */
     protected function applyForUserFilter(): void
     {
-        if (! is_null($this->forUser)) {
-            $this->getBuilder()->where(
-                $this->forUser->getAuthIdentifierName(),
-                $this->forUser->getAuthIdentifier()
-            );
+        if (is_null($this->forUser)) {
+            return;
         }
+
+        $attribute = $this->forUser->getAuthIdentifierName();
+        $value = $this->forUser->getAuthIdentifier();
+
+        if (self::shouldLog()) {
+            $this->getLogger()->info('Applying user-specific filter', [
+                $attribute => $attribute,
+                'filter' => $value,
+            ]);
+        }
+
+        $this->getBuilder()->where($attribute, $value);
     }
 
     /**
@@ -199,7 +216,7 @@ abstract class Filter implements FilterInterface
      */
     protected function applyFilterables(): void
     {
-        if (! self::shouldUseCache()) {
+        if (! self::shouldCache()) {
             $this->applyFiltersToQuery();
 
             return;
@@ -249,6 +266,13 @@ abstract class Filter implements FilterInterface
             throw new BadMethodCallException(
                 sprintf('Method [%s] does not exist on %s', $filter, static::class)
             );
+        }
+
+        if (self::shouldLog()) {
+            $this->getLogger()->info("Applying filter method: {$filter}", [
+                'filter' => $filter,
+                'value' => $value,
+            ]);
         }
 
         call_user_func([$this, $filter], $value);
@@ -465,6 +489,60 @@ abstract class Filter implements FilterInterface
     }
 
     /**
+     * Set the Logger instance.
+     *
+     * @param \Psr\Log\LoggerInterface $logger
+     *
+     * @return self
+     */
+    public function setLogger(LoggerInterface $logger): self
+    {
+        $this->logger = $logger;
+
+        return $this;
+    }
+
+    /**
+     * Get the Logger instance.
+     *
+     * @return \Psr\Log\LoggerInterface
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger ?? app(LoggerInterface::class);
+    }
+
+    /**
+     * Enable logging.
+     *
+     * @return void
+     */
+    public static function enableLogging(): void
+    {
+        self::$shouldLog = true;
+    }
+
+    /**
+     * Disable logging.
+     *
+     * @return void
+     */
+    public static function disableLogging(): void
+    {
+        self::$shouldLog = false;
+    }
+
+    /**
+     * Get indicates if logging should be used.
+     *
+     * @return bool
+     */
+    public static function shouldLog(): bool
+    {
+        return self::$shouldLog;
+    }
+
+    /**
      * Set whether to use cache.
      *
      * @param bool $useCache
@@ -493,6 +571,12 @@ abstract class Filter implements FilterInterface
      */
     public function clearCache(): void
     {
+        if (self::shouldLog()) {
+            $this->getLogger()->info('Clearing cache for filter', [
+                'cache_key' => $this->buildCacheKey(),
+            ]);
+        }
+
         $this->cache->forget($this->buildCacheKey());
     }
 
@@ -529,7 +613,7 @@ abstract class Filter implements FilterInterface
      *
      * @return bool
      */
-    public static function shouldUseCache(): bool
+    public static function shouldCache(): bool
     {
         return self::$useCache;
     }

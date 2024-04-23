@@ -227,11 +227,13 @@ This request will return all posts with the status `active` and associated with 
 
 > **Note**: Any query parameters that do not match the filter names will be ignored.
 
-## Customization
-
 ### Caching
 
 In your filter class, you can control caching by using the `enableCaching` static method. Set the `$useCache` static property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
+
+#### Enabling and Disabling Caching
+
+- **Enable Caching**: To start caching, ensure that caching is enabled. This is typically done during the setup or dynamically based on the application context, such as only enabling caching in a production environment to improve performance and reduce database load.
 
 ```php
 // AppServiceProvider.php
@@ -243,12 +245,29 @@ In your filter class, you can control caching by using the `enableCaching` stati
  */
 public function boot(): void
 {
-    // Control caching globally through methods...
+    // Enable caching globally through methods...
     Filter::enableCaching();
-    // or
-    Filter::disableCaching()
 }
 ```
+
+- **Disable Caching**: If you need to turn off caching temporarily, for example, during development to ensure fresh data is loaded on each request and to aid in debugging, you can disable it:
+
+```php
+// AppServiceProvider.php
+
+/**
+ * Bootstrap any application services.
+ *
+ * @return void
+ */
+public function boot(): void
+{
+    // Disable caching globally through methods...
+    Filter::disableCaching();
+}
+```
+
+This configuration allows you to manage caching settings centrally from the `AppServiceProvider`. Adjusting caching behavior based on the environment or specific scenarios helps optimize performance and resource utilization effectively.
 
 ```php
 namespace App\Filters;
@@ -269,6 +288,145 @@ $filter = new PostFilter(request(), cache());
 
 // Control caching
 $filter->setCacheExpiration(1440); // Cache duration in minutes
+```
+
+Certainly! Here’s a detailed usage guide section that explains how to utilize the logging functionality in the `Filter` class. This guide is designed to help developers understand and implement logging within the context of filtering operations effectively.
+
+### Logging
+
+The `Filter` class incorporates robust logging capabilities to aid in debugging and monitoring the application of filters to query builders. This functionality is crucial for tracing issues, understanding filter impacts, and ensuring the system behaves as expected.
+
+#### Configuring the Logger
+
+1. **Setting Up Logger**: Before you can log any activities, you must provide a logger instance to the `Filter` class. This logger should conform to the `Psr\Log\LoggerInterface`. Typically, this is set up in the constructor or through a setter method if the logger might change during the lifecycle of the application.
+
+```php
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+// Create a logger instance
+$logger = new Logger('name');
+$logger->pushHandler(new StreamHandler('path/to/your.log', Logger::WARNING));
+
+// Set the logger to the filter class
+$filter->setLogger($logger);
+```
+
+2. **Dependency Injection**: If you are using Laravel, you can leverage its service container to automatically inject the logger into your `Filter` class.
+
+```php
+// In a service provider or similar setup
+$this->app->when(Filter::class)
+    ->needs(LoggerInterface::class)
+    ->give(function () {
+        return new Logger('name', [new StreamHandler('path/to/your.log', Logger::WARNING)]);
+    });
+```
+
+#### Setting Up Logger with a Custom Channel
+
+You can set up a specific logging channel for your `Filter` class either by configuring it directly in the logger setup or by defining it in Laravel’s logging configuration and then injecting it. Here’s how to do it in both ways:
+
+1. **Direct Configuration**:
+
+   - Directly create a logger with a specific channel and handler. This method is straightforward and gives you full control over the logger’s configuration:
+
+```php
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+// Create a logger instance for the Filter class with a custom channel
+$logger = new Logger('filter');
+$logger->pushHandler(new StreamHandler(storage_path('logs/filter.log'), Logger::DEBUG));
+
+// Set the logger to the filter class
+$filter->setLogger($logger);
+```
+
+2. **Using Laravel's Logging Configuration**:
+
+   - Laravel allows you to define custom channels in its logging configuration file (`config/logging.php`). You can define a specific channel for the `Filter` class there and then retrieve it using the `Log` facade:
+
+```php
+// In config/logging.php
+
+'channels' => [
+    'filter' => [
+        'driver' => 'single',
+        'path' => storage_path('logs/filter.log'),
+        'level' => 'debug',
+    ],
+],
+```
+
+- Now, you can set this logger in your service provider or directly in your class using the `Log` facade:
+
+```php
+use Illuminate\Support\Facades\Log;
+
+// In your AppServiceProvider or wherever you set up the Filter class
+$filter->setLogger(Log::channel('filter'));
+```
+
+#### Enabling and Disabling Logging
+
+- **Enable Logging**: To start logging, ensure that logging is enabled. This is typically done during setup or dynamically based on application context (e.g., only logging in a development environment).
+
+```php
+// AppServiceProvider.php
+
+/**
+ * Bootstrap any application services.
+ *
+ * @return void
+ */
+public function boot(): void
+{
+    // Enable logging globally through methods...
+    Filter::enableLogging();
+}
+```
+
+- **Disable Logging**: If you need to turn off logging temporarily (e.g., in a production environment to improve performance), you can disable it:
+
+```php
+// AppServiceProvider.php
+
+/**
+ * Bootstrap any application services.
+ *
+ * @return void
+ */
+public function boot(): void
+{
+    // Disable logging globally through methods...
+    Filter::disableLogging();
+}
+```
+
+#### Logging Actions
+
+- **Automatic Logging**: Once the logger is set and enabled, the `Filter` class will automatically log relevant actions based on the methods being called and the filters being applied. This includes logging at various points such as when filters are added, when queries are executed, and when cache hits or misses occur.
+
+- **Custom Logging**: You can add custom logging within the filters you define or by extending the `Filter` class. This can be useful for logging specific conditions or additional data that the default logging does not cover.
+
+```php
+public function customFilter($value) {
+    if (self::shouldLog()) {
+        $this->getLogger()->info("Applying custom filter with value: {$value}");
+    }
+    // Filter logic here
+}
+```
+
+#### Checking If Logging Is Enabled
+
+- **Conditional Logging**: Before logging any custom messages, check if logging is enabled to avoid unnecessary processing or logging errors.
+
+```php
+if (Filter::shouldLog()) {
+    $this->getLogger()->info('Performing an important action');
+}
 ```
 
 ## Testing
