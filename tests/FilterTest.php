@@ -9,6 +9,8 @@ use Filterable\Tests\Fixtures\MockFilterable;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Http\Request;
 use Mockery as m;
+use Mockery\MockInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class FilterTest.
@@ -18,11 +20,27 @@ use Mockery as m;
 final class FilterTest extends TestCase
 {
     /**
+     * The cache handler instance.
+     *
+     * @var \Illuminate\Contracts\Cache\Repository|\Mockery\MockInterface
+     */
+    protected Repository|MockInterface $cache;
+
+    /**
+     * The Logger instance.
+     *
+     * @var \Psr\Log\LoggerInterface|\Mockery\MockInterface
+     */
+    protected LoggerInterface|MockInterface $logger;
+
+    /**
      * {@inheritdoc}
      */
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->setupLogger();
 
         MockFilterable::factory()->create([
             'name' => 'John Doe',
@@ -42,14 +60,14 @@ final class FilterTest extends TestCase
     {
         m::close();
 
-        Filter::enableCaching(false);
+        Filter::disableCaching();
 
         parent::tearDown();
     }
 
     public function testAppliesFiltersDynamicallyBasedOnRequest(): void
     {
-        Filter::enableCaching(false);
+        Filter::disableCaching();
 
         $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
         $model = new MockFilterable();
@@ -73,7 +91,7 @@ final class FilterTest extends TestCase
 
     public function testAppliesFiltersManuallyThroughModel(): void
     {
-        Filter::enableCaching(false);
+        Filter::disableCaching();
 
         $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
         $model = new MockFilterable();
@@ -97,7 +115,7 @@ final class FilterTest extends TestCase
 
     public function testAppliesFiltersDynamicallyBasedOnRequestWithCustomMethodNames(): void
     {
-        Filter::enableCaching(false);
+        Filter::disableCaching();
 
         $request = Request::create('/?name=' . urlencode('Jane Doe'), 'GET');
         $model = new MockFilterable();
@@ -164,7 +182,7 @@ final class FilterTest extends TestCase
 
     public function testHandlesCachingCorrectlyWhenDisabled(): void
     {
-        Filter::enableCaching(false);
+        Filter::disableCaching();
 
         $request = new Request();
         $cache = m::spy(Repository::class);
@@ -312,4 +330,78 @@ final class FilterTest extends TestCase
         $this->assertSame($options, $filter->getOptions());
     }
 
+    public function testLoggingWhenFiltersApplied(): void
+    {
+        Filter::disableCaching();
+        Filter::enableLogging();
+
+        $this->logger
+            ->shouldReceive('info')
+            ->once()
+            ->with('Applying filter method: name', [
+                'filter' => 'name',
+                'value' => 'John Doe'
+            ]);
+
+        $cache = m::mock(Repository::class);
+        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
+        $filter = new MockFilter($request, $cache, $this->logger);
+        $model = new MockFilterable();
+        $builder = $model->newQuery();
+
+        $results = $filter->apply($builder);
+
+        // Assertions to check the results as before
+        $this->assertEquals(
+            $model->newQuery()->where('name', 'LIKE', '%John Doe%')->toSql(),
+            $results->toSql()
+        );
+        $this->assertCount(1, $results->get());
+        $this->assertEquals('John Doe', $results->first()->name);
+    }
+
+    public function testNoLoggingWhenLoggingDisabled(): void
+    {
+        Filter::disableCaching();
+        Filter::disableLogging();
+
+        // Logger should not receive any calls
+        $this->logger->shouldNotReceive('info');
+
+        $cache = m::mock(Repository::class);
+        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
+        $filter = new MockFilter($request, $cache, $this->logger);
+        $model = new MockFilterable();
+        $builder = $model->newQuery();
+
+        $results = $filter->apply($builder);
+
+        // Assertions to check the results as before
+        $this->assertEquals(
+            $model->newQuery()->where('name', 'LIKE', '%John Doe%')->toSql(),
+            $results->toSql()
+        );
+        $this->assertCount(1, $results->get());
+        $this->assertEquals('John Doe', $results->first()->name);
+    }
+
+    public function testEnableAndDisableLoggingChecks(): void
+    {
+        Filter::enableLogging();
+        $this->assertTrue(Filter::shouldLog());
+
+        Filter::disableLogging();
+        $this->assertFalse(Filter::shouldLog());
+    }
+
+    /**
+     * Setup the Logger mock.
+     *
+     * @return void
+     */
+    protected function setupLogger(): void
+    {
+        // Mock the Logger
+        $this->logger = m::mock(LoggerInterface::class);
+    }
 }
