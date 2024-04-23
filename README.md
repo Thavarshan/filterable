@@ -1,3 +1,5 @@
+[![Filterable](https://github.com/Thavarshan/filterable/blob/main/assets/Banner.png)](https://github.com/Thavarshan/filterable/)
+
 # Filterable
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
