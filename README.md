@@ -1,6 +1,6 @@
 [![Filterable](https://i.ibb.co/VQth3zr/Banner.png)](https://github.com/Thavarshan/filterable)
 
-# Filterable
+# About Filterable
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
 [![Tests](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml/badge.svg?label=tests&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml)
