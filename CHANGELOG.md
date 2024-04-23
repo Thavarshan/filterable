@@ -1,6 +1,21 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/1.0.6...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.0...HEAD)
+
+## [v1.1.0](https://github.com/Thavarshan/filterable/compare/1.0.6...v1.1.0) - 2024-04-23
+
+### Added
+
+- **Logging Support in Filter Class**: Introduced comprehensive logging capabilities to enhance debugging and operational monitoring within the `Filter` class. This update allows developers to trace the application of filters more effectively and can be critical for both development and production debugging scenarios. [#12](https://github.com/Thavarshan/filterable/pull/12)
+  - **Dynamic Logging Controls**: Added methods `enableLogging()` and `disableLogging()` to toggle logging functionality at runtime, allowing better control over performance and log verbosity depending on the environment.
+  - **Integration with `Psr\Log\LoggerInterface`**: Ensured flexibility in logging implementations by integrating with the standard PSR-3 logger interface. Developers can now inject any compatible logging library that adheres to this standard, facilitating customized logging strategies.
+  - **Conditional Log Statements**: Added conditional logging throughout the filter application process to provide granular insights into key actions and decisions. This feature is designed to help in pinpointing issues and understanding filter behavior under various conditions.
+  - **Unit Tests for Logging**: Extended the test suite to include tests verifying that logging behaves as expected under different configurations, ensuring that the new functionality is robust and reliable.
+  
+
+### Fixed
+
+- Minor bug fixes and performance optimizations to enhance stability and efficiency.
 
 ## [1.0.6](https://github.com/Thavarshan/filterable/compare/v1.0.5...1.0.6) - 2024-04-14
 
