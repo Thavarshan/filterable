@@ -588,7 +588,7 @@ abstract class Filter implements FilterInterface
     public function getCacheHandler(): Cache
     {
         if (is_null($this->cache)) {
-            $this->cache = cache();
+            $this->cache = app(Cache::class);
         }
 
         return $this->cache;
