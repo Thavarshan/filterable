@@ -30,3 +30,4 @@ composer.lock
 coverage
 /.idea
 .php-cs-fixer.cache
+notes.md
