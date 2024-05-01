@@ -1,6 +1,26 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.0...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.1...HEAD)
+
+## [v1.1.1](https://github.com/Thavarshan/filterable/compare/v1.1.0...v1.1.1) - 2024-05-01
+
+### Added
+
+- **Compatibility support for newer PHP versions:** Updated `brick/math` requirement from PHP `^8.0` to `^8.1` to embrace the latest PHP features and improvements.
+
+### Changed
+
+- **Updated `brick/math` from `0.11.0` to `0.12.1`:** Includes performance optimizations and bug fixes to enhance mathematical operations.
+- **Updated `laravel/framework` from `v10.48.5` to `v10.48.10`:** Rolled in new minor features and improvements to the Laravel framework that benefit the stability and security of applications using `filterable`.
+- **Updated `symfony/console` from `v6.4.6` to `v6.4.7`:** Enhanced compatibility with other Symfony components, improving integration and usage within Symfony-based projects.
+- **Updated development dependencies:**
+  - `phpunit/phpunit` from `^9.0` to `^10.1` for advanced unit testing capabilities.
+  - `vimeo/psalm` from `5.0.0` to `5.16.0` for improved static analysis and code quality checks.
+  
+
+### Fixed
+
+- **Security patches and minor bugs:** All updated dependencies include patches for known vulnerabilities and fixes for various minor bugs, enhancing the security and reliability of the `filterable` package.
 
 ## [v1.1.0](https://github.com/Thavarshan/filterable/compare/1.0.6...v1.1.0) - 2024-04-23
 
@@ -11,6 +31,7 @@
   - **Integration with `Psr\Log\LoggerInterface`**: Ensured flexibility in logging implementations by integrating with the standard PSR-3 logger interface. Developers can now inject any compatible logging library that adheres to this standard, facilitating customized logging strategies.
   - **Conditional Log Statements**: Added conditional logging throughout the filter application process to provide granular insights into key actions and decisions. This feature is designed to help in pinpointing issues and understanding filter behavior under various conditions.
   - **Unit Tests for Logging**: Extended the test suite to include tests verifying that logging behaves as expected under different configurations, ensuring that the new functionality is robust and reliable.
+  
 
 ### Changed
 
