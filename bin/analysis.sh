@@ -28,4 +28,4 @@ fi
 
 # Run the phpstan analysis
 echo "Running PHPStan analysis on $DIRECTORIES_TO_ANALYSE..."
-$PHPSTAN_PATH analyse $DIRECTORIES_TO_ANALYSE -c ./phpstan.neon $XDEBUG_FLAG
+php -d memory_limit=-1 $PHPSTAN_PATH analyse $DIRECTORIES_TO_ANALYSE -c ./phpstan.neon $XDEBUG_FLAG
