@@ -233,6 +233,17 @@ This request will return all posts with the status `active` and associated with 
 
 In your filter class, you can control caching by using the `enableCaching` static method. Set the `$useCache` static property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
 
+> Caching is disabled by default.
+
+```php
+/**
+ * Indicates if caching should be used.
+ *
+ * @var bool
+ */
+protected static bool $useCache = false;
+```
+
 #### Enabling and Disabling Caching
 
 - **Enable Caching**: To start caching, ensure that caching is enabled. This is typically done during the setup or dynamically based on the application context, such as only enabling caching in a production environment to improve performance and reduce database load.
