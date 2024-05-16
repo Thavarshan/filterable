@@ -119,7 +119,7 @@ abstract class Filter implements FilterInterface
      *
      * @var bool
      */
-    protected static bool $useCache = true;
+    protected static bool $useCache = false;
 
     /**
      * Indicates if logging should be used.
@@ -300,7 +300,11 @@ abstract class Filter implements FilterInterface
         // Create a unique cache key based on the filterables and any
         // other relevant context, such as authenticated user
         $userPart = optional($this->forUser)->getAuthIdentifier() ?? 'global';
-        $filtersPart = http_build_query($this->getFilterables());
+
+        // Get the filterables, sort them by key, and normalize them
+        $filterables = $this->getFilterables();
+        ksort($filterables);
+        $filtersPart = http_build_query($filterables);
 
         return "filters:{$userPart}:{$filtersPart}";
     }
