@@ -1,6 +1,17 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.1...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.2...HEAD)
+
+## [v1.1.2](https://github.com/Thavarshan/filterable/compare/v1.1.1...v1.1.2) - 2024-05-16
+
+### Changed
+
+- Modified the buildCacheKey method to sort and normalise `filterables` before generating the cache key. This change reduces the number of unique keys and helps mitigate cache pollution issues. (See PR [#18](https://github.com/Thavarshan/filterable/pull/18))
+  Caching has now been changed to be disabled by default. This change provides more control over when caching is used, helping to prevent unnecessary cache pollution.
+
+### Fixed
+
+- Fixed cache pollution issues caused by the generation of too many unique keys. This was achieved by limiting the number of unique filter combinations that can be cached. (See issue [#17](https://github.com/Thavarshan/filterable/issues/17) and PR [#18](https://github.com/Thavarshan/filterable/pull/18))
 
 ## [v1.1.1](https://github.com/Thavarshan/filterable/compare/v1.1.0...v1.1.1) - 2024-05-01
 
