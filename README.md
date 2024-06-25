@@ -233,7 +233,7 @@ This request will return all posts with the status `active` and associated with 
 
 In your filter class, you can control caching by using the `enableCaching` static method. Set the `$useCache` static property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
 
-> Caching is disabled by default.
+> **Note**: Caching is disabled by default.
 
 ```php
 /**
