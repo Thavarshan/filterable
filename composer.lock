@@ -5142,16 +5142,16 @@
         },
         {
             "name": "composer/semver",
-            "version": "3.4.0",
+            "version": "3.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/semver.git",
-                "reference": "35e8d0af4486141bc745f23a29cc2091eb624a32"
+                "reference": "c51258e759afdb17f1fd1fe83bc12baaef6309d6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/semver/zipball/35e8d0af4486141bc745f23a29cc2091eb624a32",
-                "reference": "35e8d0af4486141bc745f23a29cc2091eb624a32",
+                "url": "https://api.github.com/repos/composer/semver/zipball/c51258e759afdb17f1fd1fe83bc12baaef6309d6",
+                "reference": "c51258e759afdb17f1fd1fe83bc12baaef6309d6",
                 "shasum": ""
             },
             "require": {
@@ -5203,7 +5203,7 @@
             "support": {
                 "irc": "ircs://irc.libera.chat:6697/composer",
                 "issues": "https://github.com/composer/semver/issues",
-                "source": "https://github.com/composer/semver/tree/3.4.0"
+                "source": "https://github.com/composer/semver/tree/3.4.2"
             },
             "funding": [
                 {
@@ -5219,7 +5219,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-08-31T09:50:34+00:00"
+            "time": "2024-07-12T11:35:52+00:00"
         },
         {
             "name": "composer/xdebug-handler",
@@ -6810,16 +6810,16 @@
         },
         {
             "name": "orchestra/testbench",
-            "version": "v8.23.2",
+            "version": "v8.24.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchestral/testbench.git",
-                "reference": "c9f89b66aaa245a2e36f046aa431587ba46a3f2e"
+                "reference": "2e5ca3ac1e8170a787532c4fc19403f91e9dd7d4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchestral/testbench/zipball/c9f89b66aaa245a2e36f046aa431587ba46a3f2e",
-                "reference": "c9f89b66aaa245a2e36f046aa431587ba46a3f2e",
+                "url": "https://api.github.com/repos/orchestral/testbench/zipball/2e5ca3ac1e8170a787532c4fc19403f91e9dd7d4",
+                "reference": "2e5ca3ac1e8170a787532c4fc19403f91e9dd7d4",
                 "shasum": ""
             },
             "require": {
@@ -6827,7 +6827,7 @@
                 "fakerphp/faker": "^1.21",
                 "laravel/framework": "^10.48.10",
                 "mockery/mockery": "^1.5.1",
-                "orchestra/testbench-core": "^8.24.3",
+                "orchestra/testbench-core": "^8.25",
                 "orchestra/workbench": "^1.4.1 || ^8.5",
                 "php": "^8.1",
                 "phpunit/phpunit": "^9.6 || ^10.1",
@@ -6859,22 +6859,22 @@
             ],
             "support": {
                 "issues": "https://github.com/orchestral/testbench/issues",
-                "source": "https://github.com/orchestral/testbench/tree/v8.23.2"
+                "source": "https://github.com/orchestral/testbench/tree/v8.24.0"
             },
-            "time": "2024-06-04T12:24:55+00:00"
+            "time": "2024-07-13T07:05:48+00:00"
         },
         {
             "name": "orchestra/testbench-core",
-            "version": "v8.24.4",
+            "version": "v8.25.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/orchestral/testbench-core.git",
-                "reference": "3acbb96840e2bd4acbe670ee95e9bd55f517964c"
+                "reference": "17cbaf568fe6c84039295b3de09a1b049339d928"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/orchestral/testbench-core/zipball/3acbb96840e2bd4acbe670ee95e9bd55f517964c",
-                "reference": "3acbb96840e2bd4acbe670ee95e9bd55f517964c",
+                "url": "https://api.github.com/repos/orchestral/testbench-core/zipball/17cbaf568fe6c84039295b3de09a1b049339d928",
+                "reference": "17cbaf568fe6c84039295b3de09a1b049339d928",
                 "shasum": ""
             },
             "require": {
@@ -6953,7 +6953,7 @@
                 "issues": "https://github.com/orchestral/testbench/issues",
                 "source": "https://github.com/orchestral/testbench-core"
             },
-            "time": "2024-06-26T12:14:16+00:00"
+            "time": "2024-07-13T06:54:00+00:00"
         },
         {
             "name": "orchestra/workbench",
