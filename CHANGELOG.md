@@ -1,6 +1,10 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.4...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.5...HEAD)
+
+## [v1.1.5](https://github.com/Thavarshan/filterable/compare/v1.1.4...v1.1.5) - 2024-09-24
+
+- Minor dependency updates for security
 
 ## [v1.1.4](https://github.com/Thavarshan/filterable/compare/v1.1.3...v1.1.4) - 2024-08-25
 
