@@ -2,12 +2,6 @@
 
 **PLEASE DON'T DISCLOSE SECURITY-RELATED ISSUES PUBLICLY, [SEE BELOW](#reporting-a-vulnerability).**
 
-## Supported Versions
-
-| Version | Security Fixes Until |
-| ------- | -------------------- |
-| 1.1.0   | December 02nd, 2024  |
-
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability within this app, please send an email to <Jerome Thayananthajothy> (<tjthavarshan@gmail.com>). All security vulnerabilities will and must be promptly addressed.
