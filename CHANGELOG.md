@@ -1,6 +1,16 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.5...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.6...HEAD)
+
+## [v1.1.6](https://github.com/Thavarshan/filterable/compare/v1.1.5...v1.1.6) - 2024-09-25
+
+### Changed
+
+- Extend compatibility to PHP 8.3
+
+### Fixed
+
+- Laravel 9 compatibility issues
 
 ## [v1.1.5](https://github.com/Thavarshan/filterable/compare/v1.1.4...v1.1.5) - 2024-09-24
 
