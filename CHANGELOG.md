@@ -1,6 +1,26 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.6...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.7...HEAD)
+
+## [v1.1.7](https://github.com/Thavarshan/filterable/compare/v1.1.6...v1.1.7) - 2025-02-23
+
+### Added
+
+- Introduced the `FilterableServiceProvider` to register the `MakeFilterCommand`.
+- Added a new `Filterable` interface to define the contract for the Filterable trait.
+- Added a new `Filter` interface to define the contract for the Filter class.
+
+### Changed
+
+- Added type hints for method parameters and return types to improve code clarity and type safety.
+- Improved the `Filterable` trait to ensure compatibility with PHP 8.4.
+- Enhanced the `Filter` class with better type hinting and method documentation.
+- Updated the `FilterableTest` to include the necessary setup for bootstrapping the Laravel application.
+
+### Fixed
+
+- Fixed an issue where the `config` class was not available during tests by bootstrapping the Laravel application in the test setup.
+- Corrected the test case to ensure the `apply` method is called correctly in the `filter_throws_exception_when_filter_application_fails` test.
 
 ## [v1.1.6](https://github.com/Thavarshan/filterable/compare/v1.1.5...v1.1.6) - 2024-09-25
 
