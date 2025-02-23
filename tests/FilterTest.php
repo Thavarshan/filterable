@@ -21,15 +21,11 @@ final class FilterTest extends TestCase
 {
     /**
      * The cache handler instance.
-     *
-     * @var \Illuminate\Contracts\Cache\Repository|\Mockery\MockInterface
      */
     protected Repository|MockInterface $cache;
 
     /**
      * The Logger instance.
-     *
-     * @var \Psr\Log\LoggerInterface|\Mockery\MockInterface
      */
     protected LoggerInterface|MockInterface $logger;
 
@@ -65,12 +61,15 @@ final class FilterTest extends TestCase
         parent::tearDown();
     }
 
-    public function testAppliesFiltersDynamicallyBasedOnRequest(): void
+    /**
+     * @test
+     */
+    public function applies_filters_dynamically_based_on_request(): void
     {
         Filter::disableCaching();
 
-        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
-        $model = new MockFilterable();
+        $request = Request::create('/?name='.urlencode('John Doe'), 'GET');
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         $cache = m::mock(Repository::class);
@@ -89,12 +88,15 @@ final class FilterTest extends TestCase
         $this->assertEquals('John Doe', $results->first()->name);
     }
 
-    public function testAppliesFiltersManuallyThroughModel(): void
+    /**
+     * @test
+     */
+    public function applies_filters_manually_through_model(): void
     {
         Filter::disableCaching();
 
-        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
-        $model = new MockFilterable();
+        $request = Request::create('/?name='.urlencode('John Doe'), 'GET');
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         $cache = m::mock(Repository::class);
@@ -113,19 +115,23 @@ final class FilterTest extends TestCase
         $this->assertEquals('John Doe', $results->first()->name);
     }
 
-    public function testAppliesFiltersDynamicallyBasedOnRequestWithCustomMethodNames(): void
+    /**
+     * @test
+     */
+    public function applies_filters_dynamically_based_on_request_with_custom_method_names(): void
     {
         Filter::disableCaching();
 
-        $request = Request::create('/?name=' . urlencode('Jane Doe'), 'GET');
-        $model = new MockFilterable();
+        $request = Request::create('/?name='.urlencode('Jane Doe'), 'GET');
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         $cache = m::mock(Repository::class);
         $cache->shouldNotReceive('remember')->andReturn($builder);
 
         // Assuming 'name' filter translates to a method call
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             protected array $filterMethodMap = [
                 'name' => 'filterByName',
             ];
@@ -146,19 +152,23 @@ final class FilterTest extends TestCase
         $this->assertEquals('Jane Doe', $results->first()->name);
     }
 
-    public function testHandlesCachingCorrectly(): void
+    /**
+     * @test
+     */
+    public function handles_caching_correctly(): void
     {
         Filter::enableCaching(true);
 
-        $request = new Request();
+        $request = new Request;
         $cache = m::spy(Repository::class);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         // Verify that caching logic is invoked
         $cache->shouldReceive('remember')->once();
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             protected array $filters = ['test_filter'];
 
             public function __construct($request, $cache)
@@ -166,7 +176,10 @@ final class FilterTest extends TestCase
                 parent::__construct($request, $cache);
             }
 
-            protected function testFilter($value)
+            /**
+             * @test
+             */
+            protected function filter($value)
             {
                 // Dummy filter application
             }
@@ -180,22 +193,29 @@ final class FilterTest extends TestCase
         $this->assertSame($builder, $results);
     }
 
-    public function testHandlesCachingCorrectlyWhenDisabled(): void
+    /**
+     * @test
+     */
+    public function handles_caching_correctly_when_disabled(): void
     {
         Filter::disableCaching();
 
-        $request = new Request();
+        $request = new Request;
         $cache = m::spy(Repository::class);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         // Verify that caching logic is not invoked
         $cache->shouldNotHaveReceived('remember');
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             protected array $filters = ['test_filter'];
 
-            protected function testFilter($value)
+            /**
+             * @test
+             */
+            protected function filter($value)
             {
                 // Dummy filter application
             }
@@ -207,22 +227,29 @@ final class FilterTest extends TestCase
         $this->assertNotEmpty($results->get());
     }
 
-    public function testHandlesCachingCorrectlyWhenForced(): void
+    /**
+     * @test
+     */
+    public function handles_caching_correctly_when_forced(): void
     {
         Filter::enableCaching(true);
 
-        $request = new Request();
+        $request = new Request;
         $cache = m::spy(Repository::class);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         // Verify that caching logic is invoked
         $cache->shouldReceive('remember')->once();
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             protected array $filters = ['test_filter'];
 
-            protected function testFilter($value)
+            /**
+             * @test
+             */
+            protected function filter($value)
             {
                 // Dummy filter application
             }
@@ -234,13 +261,16 @@ final class FilterTest extends TestCase
         $this->assertNotEmpty($results->get());
     }
 
-    public function testHandlesCachingCorrectlyWhenForcedWithCustomTtl(): void
+    /**
+     * @test
+     */
+    public function handles_caching_correctly_when_forced_with_custom_ttl(): void
     {
         Filter::enableCaching(true);
 
-        $request = new Request();
+        $request = new Request;
         $cache = m::spy(Repository::class);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         $customTtl = Carbon::now()->addMinutes(60);
@@ -248,10 +278,14 @@ final class FilterTest extends TestCase
         // Verify that caching logic is invoked
         $cache->shouldReceive('remember')->once();
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             protected array $filters = ['test_filter'];
 
-            protected function testFilter($value)
+            /**
+             * @test
+             */
+            protected function filter($value)
             {
                 // Dummy filter application
             }
@@ -265,15 +299,19 @@ final class FilterTest extends TestCase
         $this->assertNotEmpty($results->get());
     }
 
-    public function testClearsCacheCorrectly(): void
+    /**
+     * @test
+     */
+    public function clears_cache_correctly(): void
     {
         Filter::enableCaching(true);
 
-        $request = new Request();
+        $request = new Request;
         $cache = m::mock(Repository::class);
         $cache->shouldReceive('forget')->once();
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             // Custom implementation or use existing methods.
         };
 
@@ -285,19 +323,23 @@ final class FilterTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function testAppliesPreFiltersCorrectly(): void
+    /**
+     * @test
+     */
+    public function applies_pre_filters_correctly(): void
     {
         Filter::enableCaching();
 
-        $request = new Request();
+        $request = new Request;
         $cache = m::mock(Repository::class);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         // Verify that caching logic is invoked
         $cache->shouldReceive('remember')->once();
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             public function applyPreFilters(): void
             {
                 $this->builder->where('active', 1);
@@ -314,12 +356,16 @@ final class FilterTest extends TestCase
         );
     }
 
-    public function testSetsAndGetsOptionsCorrectly(): void
+    /**
+     * @test
+     */
+    public function sets_and_gets_options_correctly(): void
     {
-        $request = new Request();
+        $request = new Request;
         $cache = m::mock(Repository::class);
 
-        $filter = new class ($request, $cache) extends Filter {
+        $filter = new class($request, $cache) extends Filter
+        {
             // Custom implementation or use existing methods.
         };
 
@@ -330,7 +376,10 @@ final class FilterTest extends TestCase
         $this->assertSame($options, $filter->getOptions());
     }
 
-    public function testLoggingWhenFiltersApplied(): void
+    /**
+     * @test
+     */
+    public function logging_when_filters_applied(): void
     {
         Filter::disableCaching();
         Filter::enableLogging();
@@ -340,13 +389,13 @@ final class FilterTest extends TestCase
             ->once()
             ->with('Applying filter method: name', [
                 'filter' => 'name',
-                'value' => 'John Doe'
+                'value' => 'John Doe',
             ]);
 
         $cache = m::mock(Repository::class);
-        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
+        $request = Request::create('/?name='.urlencode('John Doe'), 'GET');
         $filter = new MockFilter($request, $cache, $this->logger);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         $results = $filter->apply($builder);
@@ -360,7 +409,10 @@ final class FilterTest extends TestCase
         $this->assertEquals('John Doe', $results->first()->name);
     }
 
-    public function testNoLoggingWhenLoggingDisabled(): void
+    /**
+     * @test
+     */
+    public function no_logging_when_logging_disabled(): void
     {
         Filter::disableCaching();
         Filter::disableLogging();
@@ -369,9 +421,9 @@ final class FilterTest extends TestCase
         $this->logger->shouldNotReceive('info');
 
         $cache = m::mock(Repository::class);
-        $request = Request::create('/?name=' . urlencode('John Doe'), 'GET');
+        $request = Request::create('/?name='.urlencode('John Doe'), 'GET');
         $filter = new MockFilter($request, $cache, $this->logger);
-        $model = new MockFilterable();
+        $model = new MockFilterable;
         $builder = $model->newQuery();
 
         $results = $filter->apply($builder);
@@ -385,7 +437,10 @@ final class FilterTest extends TestCase
         $this->assertEquals('John Doe', $results->first()->name);
     }
 
-    public function testEnableAndDisableLoggingChecks(): void
+    /**
+     * @test
+     */
+    public function enable_and_disable_logging_checks(): void
     {
         Filter::enableLogging();
         $this->assertTrue(Filter::shouldLog());
@@ -396,8 +451,6 @@ final class FilterTest extends TestCase
 
     /**
      * Setup the Logger mock.
-     *
-     * @return void
      */
     protected function setupLogger(): void
     {

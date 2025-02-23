@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class MockFilterable extends Model implements FilterableInterface
 {
-    use HasFactory;
     use Filterable;
+    use HasFactory;
 
     /**
      * The table associated with the model.

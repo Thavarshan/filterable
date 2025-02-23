@@ -23,16 +23,12 @@ class TestCase extends BaseTestCase
         $this->setUpDatabase($this->app);
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Filterable\\Database\\Factories\\' . class_basename($modelName) . 'Factory'
+            fn (string $modelName) => 'Filterable\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 
     /**
      * Set up the database for the test.
-     *
-     * @param \Illuminate\Contracts\Foundation\Application $app
-     *
-     * @return void
      */
     protected function setUpDatabase(Application $app): void
     {

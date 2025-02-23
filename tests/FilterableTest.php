@@ -25,8 +25,6 @@ final class FilterableTest extends TestCase
 
     /**
      * The model to be used for testing, which uses the Filterable trait.
-     *
-     * @var \Filterable\Tests\Fixtures\MockFilterable
      */
     protected MockFilterable $model;
 
@@ -41,7 +39,7 @@ final class FilterableTest extends TestCase
         $this->filter = m::mock(Filter::class);
 
         // Create an instance of a model using the Filterable trait.
-        $this->model = new MockFilterable();
+        $this->model = new MockFilterable;
     }
 
     /**
@@ -56,7 +54,7 @@ final class FilterableTest extends TestCase
         parent::tearDown();
     }
 
-    public function testFilterAppliesFiltersToModelQuery(): void
+    public function test_filter_applies_filters_to_model_query(): void
     {
         $options = ['option1' => 'value1'];
         $builder = m::mock(Builder::class);
@@ -73,7 +71,7 @@ final class FilterableTest extends TestCase
         $this->assertSame($builder, $result);
     }
 
-    public function testFilterThrowsExceptionWhenFilterApplicationFails(): void
+    public function test_filter_throws_exception_when_filter_application_fails(): void
     {
         $this->expectException(Exception::class);
 

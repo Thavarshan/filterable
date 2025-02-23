@@ -9,7 +9,10 @@ namespace Filterable\Tests;
  */
 final class MakeFilterCommandTest extends TestCase
 {
-    public function testItCanGenerateANewFilterClass(): void
+    /**
+     * @test
+     */
+    public function it_can_generate_a_new_filter_class(): void
     {
         $this->artisan('make:filter', ['name' => 'FooFilter'])
             ->assertExitCode(0);

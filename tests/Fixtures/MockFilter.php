@@ -9,8 +9,6 @@ class MockFilter extends Filter
 {
     /**
      * The filters that should be applied to the data.
-     *
-     * @var array
      */
     protected array $filters = [
         'name',
@@ -19,10 +17,6 @@ class MockFilter extends Filter
 
     /**
      * Filter the query by a given name.
-     *
-     * @param string $name
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function name(string $name): Builder
     {
@@ -31,10 +25,6 @@ class MockFilter extends Filter
 
     /**
      * Filter the query by a given email.
-     *
-     * @param string $email
-     *
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function email(string $email): Builder
     {
