@@ -32,7 +32,7 @@
         }
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.3 | ^8.4",
         "illuminate/cache": "^10.0|^11.0",
         "illuminate/contracts": "^10.0|^11.0",
         "illuminate/database": "^10.0|^11.0",
