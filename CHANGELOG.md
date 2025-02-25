@@ -1,6 +1,12 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.1.7...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.2.0...HEAD)
+
+## [v1.2.0](https://github.com/Thavarshan/filterable/compare/v1.1.7...v1.2.0) - 2025-02-25
+
+### Added
+
+- Support for Laravel `^12`
 
 ## [v1.1.7](https://github.com/Thavarshan/filterable/compare/v1.1.6...v1.1.7) - 2025-02-23
 
