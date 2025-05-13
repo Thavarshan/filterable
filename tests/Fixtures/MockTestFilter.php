@@ -57,7 +57,7 @@ class MockTestFilter extends Filter
             return $this->mockExecuteQueryWithMemoryManagement();
         }
 
-        return $this->builder->get();
+        return $this->getBuilder()->get();
     }
 
     /**

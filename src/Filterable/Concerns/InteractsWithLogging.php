@@ -8,11 +8,6 @@ use Psr\Log\LoggerInterface;
 trait InteractsWithLogging
 {
     /**
-     * Indicates if logging should be used.
-     */
-    protected static bool $shouldLog = false;
-
-    /**
      * The logger instance.
      */
     protected ?LoggerInterface $logger = null;
@@ -22,7 +17,7 @@ trait InteractsWithLogging
      */
     protected function logInfo(string $message, array $context = []): void
     {
-        if (self::shouldLog()) {
+        if ($this->hasFeature('logging')) {
             $this->getLogger()->info($message, $context);
         }
     }
@@ -32,7 +27,7 @@ trait InteractsWithLogging
      */
     protected function logDebug(string $message, array $context = []): void
     {
-        if (self::shouldLog()) {
+        if ($this->hasFeature('logging')) {
             $this->getLogger()->debug($message, $context);
         }
     }
@@ -42,7 +37,7 @@ trait InteractsWithLogging
      */
     protected function logWarning(string $message, array $context = []): void
     {
-        if (self::shouldLog()) {
+        if ($this->hasFeature('logging')) {
             $this->getLogger()->warning($message, $context);
         }
     }
@@ -63,29 +58,5 @@ trait InteractsWithLogging
     public function getLogger(): LoggerInterface
     {
         return $this->logger ?? app(LoggerInterface::class);
-    }
-
-    /**
-     * Enable logging.
-     */
-    public static function enableLogging(): void
-    {
-        self::$shouldLog = true;
-    }
-
-    /**
-     * Disable logging.
-     */
-    public static function disableLogging(): void
-    {
-        self::$shouldLog = false;
-    }
-
-    /**
-     * Check if logging should be used.
-     */
-    public static function shouldLog(): bool
-    {
-        return self::$shouldLog;
     }
 }

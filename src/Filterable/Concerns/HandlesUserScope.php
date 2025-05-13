@@ -41,6 +41,6 @@ trait HandlesUserScope
             ]);
         }
 
-        $this->builder->where($attribute, $value);
+        $this->getBuilder()->where($attribute, $value);
     }
 }

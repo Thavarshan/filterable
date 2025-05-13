@@ -5,15 +5,10 @@ namespace Filterable\Concerns;
 use Carbon\Carbon;
 use Filterable\Contracts\Filter;
 use Illuminate\Contracts\Cache\Repository as Cache;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 trait InteractsWithCache
 {
-    /**
-     * Indicates if caching should be used.
-     */
-    protected static bool $useCache = false;
-
     /**
      * Expiration minutes for the cache.
      */
@@ -35,7 +30,7 @@ trait InteractsWithCache
             function (): Collection {
                 $this->applyFiltersToQuery();
 
-                return $this->builder->get();
+                return $this->getBuilder()->get();
             }
         );
     }
@@ -92,8 +87,8 @@ trait InteractsWithCache
         }
 
         // Otherwise, use basic caching
-        if (! self::shouldCache()) {
-            return $this->builder->get();
+        if (! $this->hasFeature('caching')) {
+            return $this->getBuilder()->get();
         }
 
         $cache = $this->getCacheHandler();
@@ -103,7 +98,7 @@ trait InteractsWithCache
             $cacheKey,
             Carbon::now()->addMinutes($this->getCacheExpiration()),
             function (): Collection {
-                return $this->builder->get();
+                return $this->getBuilder()->get();
             }
         );
     }
@@ -149,35 +144,11 @@ trait InteractsWithCache
     }
 
     /**
-     * Enable caching.
-     */
-    public static function enableCaching(): void
-    {
-        self::$useCache = true;
-    }
-
-    /**
-     * Disable caching.
-     */
-    public static function disableCaching(): void
-    {
-        self::$useCache = false;
-    }
-
-    /**
-     * Check if caching should be used.
-     */
-    public static function shouldCache(): bool
-    {
-        return self::$useCache;
-    }
-
-    /**
      * Clear the cache.
      */
     public function clearCache(): void
     {
-        if (method_exists($this, 'shouldLog') && $this->shouldLog()) {
+        if ($this->hasFeature('logging')) {
             $this->getLogger()->info('Clearing cache for filter', [
                 'cache_key' => $this->buildCacheKey(),
             ]);

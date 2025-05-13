@@ -27,14 +27,14 @@ trait HandlesPreFilters
      */
     protected function applyPreFilters(): void
     {
-        if (is_null($this->preFilters)) {
+        if ($this->preFilters === null) {
             return;
         }
 
-        if (method_exists($this, 'logInfo')) {
-            $this->logInfo('Applying pre-filters');
-        }
+        // Only log if the logging feature is enabled
+        $this->logInfo('Applying pre-filters');
 
-        call_user_func($this->preFilters, $this->builder);
+        // Apply pre-filters to builder
+        ($this->preFilters)($this->builder);
     }
 }

@@ -118,7 +118,7 @@ abstract class Filter implements FilterContract
         }
 
         $this->builder = $builder;
-        $this->options = $options ?? [];
+        $this->options = array_merge($this->options, $options ?? []);
         $this->state = 'applying';
 
         // Start performance monitoring if enabled
@@ -173,22 +173,18 @@ abstract class Filter implements FilterContract
             $this->state = 'applied';
 
             // Log completion of filter application if logging is enabled
-            if ($this->hasFeature('logging')) {
-                $this->logInfo('Filter application completed', [
-                    'applied_filters' => $this->getCurrentFilters(),
-                ]);
-            }
+            $this->logInfo('Filter application completed', [
+                'applied_filters' => $this->getCurrentFilters(),
+            ]);
         } catch (Throwable $e) {
             $this->state = 'failed';
             $this->lastException = $e;
 
             // Log error if logging is enabled
-            if ($this->hasFeature('logging')) {
-                $this->logWarning('Error applying filters', [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                ]);
-            }
+            $this->logWarning('Error applying filters', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             // Always rethrow validation exceptions
             if ($e instanceof ValidationException) {
@@ -264,7 +260,7 @@ abstract class Filter implements FilterContract
         }
 
         // Otherwise, just execute the query
-        return $this->builder->get();
+        return $this->getBuilder()->get();
     }
 
     /**
@@ -335,8 +331,8 @@ abstract class Filter implements FilterContract
 
         // Add SQL info if we have a builder
         if ($this->builder) {
-            $debugInfo['sql'] = $this->builder->toSql();
-            $debugInfo['bindings'] = $this->builder->getBindings();
+            $debugInfo['sql'] = $this->getBuilder()->toSql();
+            $debugInfo['bindings'] = $this->getBuilder()->getBindings();
         }
 
         // Add performance metrics if available
@@ -376,13 +372,25 @@ abstract class Filter implements FilterContract
     }
 
     /**
+     * Set a specific option value.
+     */
+    public function setOption(string $key, mixed $value): self
+    {
+        $this->options[$key] = $value;
+
+        return $this;
+    }
+
+    /**
      * Set the extra options for the filter.
      *
      * @param  array<string, mixed>  $options
      */
     public function setOptions(array $options): self
     {
-        $this->options = $options;
+        foreach ($options as $key => $value) {
+            $this->setOption($key, $value);
+        }
 
         return $this;
     }
