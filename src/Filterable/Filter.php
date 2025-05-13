@@ -2,90 +2,88 @@
 
 namespace Filterable;
 
-use BadMethodCallException;
-use Carbon\Carbon;
-use Closure;
-use Filterable\Interfaces\Filter as FilterInterface;
-use Illuminate\Contracts\Auth\Authenticatable;
+use Filterable\Concerns\HandlesFilterables;
+use Filterable\Concerns\HandlesFilterPermissions;
+use Filterable\Concerns\HandlesPreFilters;
+use Filterable\Concerns\HandlesRateLimiting;
+use Filterable\Concerns\HandlesUserScope;
+use Filterable\Concerns\InteractsWithCache;
+use Filterable\Concerns\InteractsWithLogging;
+use Filterable\Concerns\ManagesMemory;
+use Filterable\Concerns\MonitorsPerformance;
+use Filterable\Concerns\OptimizesQueries;
+use Filterable\Concerns\SmartCaching;
+use Filterable\Concerns\SupportsFilterChaining;
+use Filterable\Concerns\TransformsFilterValues;
+use Filterable\Concerns\ValidatesFilterInput;
+use Filterable\Contracts\Filter as FilterContract;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Traits\Conditionable;
+use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use Throwable;
 
-abstract class Filter implements FilterInterface
+abstract class Filter implements FilterContract
 {
+    use Conditionable;
+    use HandlesFilterables,
+        HandlesFilterPermissions,
+        HandlesPreFilters,
+        HandlesRateLimiting,
+        HandlesUserScope,
+        InteractsWithCache,
+        InteractsWithLogging,
+        ManagesMemory,
+        MonitorsPerformance,
+        OptimizesQueries,
+        SmartCaching,
+        SupportsFilterChaining,
+        TransformsFilterValues,
+        ValidatesFilterInput;
+
     /**
      * The Eloquent builder instance.
      */
-    protected Builder $builder;
-
-    /**
-     * The pre-filters to apply to the query.
-     *
-     * These are filters to be applied before the actual filterables are executed.
-     * So when the Query Builder is run, the results have has already been
-     * filtered and then the actual filters are applied.
-     */
-    protected ?Closure $preFilters = null;
-
-    /**
-     * Registered filters to operate upon.
-     *
-     * @var array<string>
-     */
-    protected array $filters = [];
-
-    /**
-     * Map of filter names to methods.
-     *
-     * @var array<string, string>
-     */
-    protected array $filterMethodMap = [];
-
-    /**
-     * All filters that have been chosed to be applied.
-     *
-     * @var array<string, mixed>
-     */
-    protected array $filterables = [];
-
-    /**
-     * The current filters being applied.
-     *
-     * @var array<string>
-     */
-    protected array $currentFilters = [];
+    protected ?Builder $builder = null;
 
     /**
      * Extra options for the filter.
-     *
-     * These options are for the developers use and are not used internally.
      *
      * @var array<string, mixed>
      */
     protected array $options = [];
 
     /**
-     * Indicates if caching should be used.
+     * Features that are enabled for this filter.
+     *
+     * @var array<string, bool>
      */
-    protected static bool $useCache = false;
+    protected array $features = [
+        'validation' => false,
+        'permissions' => false,
+        'rateLimit' => false,
+        'caching' => false,
+        'logging' => false,
+        'performance' => false,
+        'optimization' => false,
+        'memoryManagement' => false,
+        'filterChaining' => false,
+        'valueTransformation' => false,
+    ];
 
     /**
-     * Indicates if logging should be used.
+     * The current state of the filter.
      */
-    protected static bool $shouldLog = false;
+    protected string $state = 'initialized';
 
     /**
-     * Expiration minutes for the cache.
+     * Last exception encountered during filtering.
      */
-    protected int $cacheExpiration = 5;
-
-    /**
-     * The authenticated user to filter by.
-     */
-    protected ?Authenticatable $forUser = null;
+    protected ?Throwable $lastException = null;
 
     /**
      * Create a new filter instance.
@@ -94,250 +92,275 @@ abstract class Filter implements FilterInterface
      */
     public function __construct(
         protected Request $request,
-        protected ?Cache $cache = null,
-        protected ?LoggerInterface $logger = null
-    ) {}
+        ?Cache $cache = null,
+        ?LoggerInterface $logger = null
+    ) {
+        // Set up the dependencies
+        if ($cache) {
+            $this->setCacheHandler($cache);
+            $this->enableFeature('caching');
+        }
+
+        if ($logger) {
+            $this->setLogger($logger);
+            $this->enableFeature('logging');
+        }
+    }
 
     /**
      * Apply the filters.
      */
     public function apply(Builder $builder, ?array $options = []): Builder
     {
-        // Set the builder and options
-        $this->setOptions($options)->setBuilder($builder);
-
-        // Apply the filter for a specific user if it's set
-        // Basically to filter resutls by 'user_id' column
-        $this->applyForUserFilter();
-
-        // Apply any predefined filters
-        $this->applyPreFilters();
-
-        // Apply the filters that are defined dynamically
-        $this->applyFilterables();
-
-        // Return the Builder instance with all the filters applied
-        return $this->getBuilder();
-    }
-
-    /**
-     * Filter the query to only include records for the authenticated user.
-     */
-    protected function applyForUserFilter(): void
-    {
-        if (is_null($this->forUser)) {
-            return;
+        // Ensure we're in a clean state or throw meaningful error
+        if ($this->state !== 'initialized' && $this->state !== 'failed') {
+            throw new RuntimeException("Filter cannot be reapplied. Current state: {$this->state}");
         }
 
-        $attribute = $this->forUser->getAuthIdentifierName();
-        $value = $this->forUser->getAuthIdentifier();
+        $this->builder = $builder;
+        $this->options = $options ?? [];
+        $this->state = 'applying';
 
-        if (self::shouldLog()) {
-            $this->getLogger()->info('Applying user-specific filter', [
-                $attribute => $attribute,
-                'filter' => $value,
+        // Start performance monitoring if enabled
+        if ($this->hasFeature('performance')) {
+            $this->startTiming();
+        }
+
+        // Log start of filter application if logging is enabled
+        if ($this->hasFeature('logging')) {
+            $this->logInfo('Beginning filter application', [
+                'filters' => $this->getFilterables(),
+                'options' => $this->options,
             ]);
         }
 
-        $this->getBuilder()->where($attribute, $value);
+        // Apply query optimizations if enabled
+        if ($this->hasFeature('optimization')) {
+            $this->optimizeQuery();
+        }
+
+        try {
+            // Security checks (only if the features are enabled)
+            if ($this->hasFeature('validation')) {
+                $this->validateFilterInputs();
+            }
+
+            if ($this->hasFeature('permissions')) {
+                $this->checkFilterPermissions();
+            }
+
+            if ($this->hasFeature('rateLimit')) {
+                if (! $this->checkRateLimits()) {
+                    throw new RuntimeException('Filter request exceeded rate limit or complexity threshold');
+                }
+            }
+
+            // Apply value transformations if enabled
+            if ($this->hasFeature('valueTransformation')) {
+                $this->transformFilterValues();
+            }
+
+            // Core filtering (always applied)
+            $this->applyUserScope();
+            $this->applyPreFilters();
+            $this->applyFilterables();
+
+            // Apply custom filter chains if enabled
+            if ($this->hasFeature('filterChaining') && ! empty($this->customFilters)) {
+                $this->applyCustomFilters();
+            }
+
+            $this->state = 'applied';
+
+            // Log completion of filter application if logging is enabled
+            if ($this->hasFeature('logging')) {
+                $this->logInfo('Filter application completed', [
+                    'applied_filters' => $this->getCurrentFilters(),
+                ]);
+            }
+        } catch (Throwable $e) {
+            $this->state = 'failed';
+            $this->lastException = $e;
+
+            // Log error if logging is enabled
+            if ($this->hasFeature('logging')) {
+                $this->logWarning('Error applying filters', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+
+            // Always rethrow validation exceptions
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
+
+            // For other exceptions, let subclasses decide whether to rethrow
+            $this->handleFilteringException($e);
+        }
+
+        // End performance monitoring if enabled
+        if ($this->hasFeature('performance')) {
+            $this->endTiming();
+        }
+
+        return $this->builder;
     }
 
     /**
-     * Apply the filterables to the query.
+     * Transform filter values if transformers are registered.
+     * This method is called before applying filters if valueTransformation is enabled.
      */
-    protected function applyFilterables(): void
+    protected function transformFilterValues(): void
     {
-        if (! self::shouldCache()) {
-            $this->applyFiltersToQuery();
-
+        if (empty($this->transformers)) {
             return;
         }
 
-        $this->getCacheHandler()->remember(
-            $this->buildCacheKey(),
-            Carbon::now()->addMinutes($this->getCacheExpiration()),
-            function (): Collection {
-                $this->applyFiltersToQuery();
+        $filterables = $this->getFilterables();
 
-                return $this->getBuilder()->get();
+        foreach ($filterables as $filter => $value) {
+            if (isset($this->transformers[$filter])) {
+                $this->filterables[$filter] = $this->transformFilterValue($filter, $value);
             }
-        );
+        }
     }
 
     /**
-     * Execute the query builder query functionality with the filters applied.
+     * Handle exceptions that occur during filtering.
+     * Subclasses can override this method to customize exception handling.
      */
-    protected function applyFiltersToQuery(): void
+    protected function handleFilteringException(Throwable $exception): void
     {
-        collect($this->getFilterables())
-            ->filter(fn (mixed $value) => $value !== null
-                && $value !== ''
-                && $value !== false
-                && $value !== [])
-            ->each(function ($value, $filter) {
-                $this->applyFilterable($filter, $value);
-            });
+        // By default, don't rethrow the exception
+        // Subclasses can override this to change behavior
     }
 
     /**
-     * Apply a filter to the query.
+     * Execute the query and get the results.
      */
-    protected function applyFilterable(string $filter, mixed $value): void
+    public function get(): Collection
     {
-        $filter = $this->makeFilterIntoMethodName($filter);
+        if ($this->state === 'initialized') {
+            throw new RuntimeException('You must call apply() before get()');
+        }
 
-        if (! method_exists($this, $filter)) {
-            throw new BadMethodCallException(
-                sprintf('Method [%s] does not exist on %s', $filter, static::class)
+        if ($this->state === 'failed') {
+            throw new RuntimeException(
+                'Filters failed to apply: '.$this->lastException?->getMessage(),
+                0,
+                $this->lastException
             );
         }
 
-        if (self::shouldLog()) {
-            $this->getLogger()->info("Applying filter method: {$filter}", [
-                'filter' => $filter,
-                'value' => $value,
-            ]);
+        // Use cached query execution if caching is enabled
+        if ($this->hasFeature('caching')) {
+            return $this->executeQueryWithCaching();
         }
 
-        call_user_func([$this, $filter], $value);
-    }
-
-    /**
-     * Make the filter into a method name.
-     */
-    protected function makeFilterIntoMethodName(string $filter): string
-    {
-        return $this->filterMethodMap[$filter] ?? Str::camel($filter);
-    }
-
-    /**
-     * Build the cache key for the filter.
-     */
-    protected function buildCacheKey(): string
-    {
-        // Create a unique cache key based on the filterables and any
-        // other relevant context, such as authenticated user
-        $userPart = optional($this->forUser)->getAuthIdentifier() ?? 'global';
-
-        // Get the filterables, sort them by key, and normalize them
-        $filterables = $this->getFilterables();
-        ksort($filterables);
-        $filtersPart = http_build_query($filterables);
-
-        return "filters:{$userPart}:{$filtersPart}";
-    }
-
-    /**
-     * Fetch all relevant filters (key, value) from the request.
-     *
-     * @return array<string>
-     */
-    public function getFilterables(): array
-    {
-        $filterKeys = array_merge(
-            $this->getFilters(),
-            array_keys($this->filterMethodMap ?? [])
-        );
-
-        // Will contains key, value pairs of the filters
-        $this->filterables = array_merge(
-            $this->filterables,
-            array_filter($this->request->only($filterKeys))
-        );
-
-        $this->currentFilters = array_keys($this->filterables);
-
-        return $this->filterables;
-    }
-
-    /**
-     * Get the registered filters.
-     *
-     * @return array<string, mixed>
-     */
-    public function getFilters(): array
-    {
-        return $this->filters;
-    }
-
-    /**
-     * Append a filterable value to the filter.
-     */
-    public function appendFilterable(string $key, mixed $value): self
-    {
-        $this->filterables[$key] = $value;
-
-        return $this;
-    }
-
-    /**
-     * Filter the query to only include records for the authenticated user.
-     */
-    public function forUser(?Authenticatable $user): self
-    {
-        $this->forUser = $user;
-
-        return $this;
-    }
-
-    /**
-     * Get the current filters being applied.
-     *
-     * @return array<string>
-     */
-    public function getCurrentFilters(): array
-    {
-        return $this->currentFilters;
-    }
-
-    /**
-     * Register pre-filters to apply to the query.
-     */
-    public function registerPreFilters(Closure $callback): self
-    {
-        $this->preFilters = $callback;
-
-        return $this;
-    }
-
-    /**
-     * Apply pre-filters to the query.
-     */
-    protected function applyPreFilters(): void
-    {
-        if (! is_null($this->preFilters)) {
-            call_user_func_array($this->preFilters, [$this->getBuilder()]);
+        // Use memory-efficient processing for large datasets if enabled
+        if ($this->hasFeature('memoryManagement') && ($this->options['chunk_size'] ?? false)) {
+            return $this->executeQueryWithMemoryManagement();
         }
+
+        // Otherwise, just execute the query
+        return $this->builder->get();
     }
 
     /**
-     * Apply all relevant filters to the query and present it
-     * as a callable for use within a collection instance.
-     *
-     *
-     * @see https://laravel.com/docs/10.x/collections#method-filter
+     * Run the full filter pipeline and get results in one step.
      */
-    public function asCollectionFilter(): Closure
+    public function runQuery(Builder $builder, ?array $options = []): Collection
     {
-        return fn (mixed $items) => collect($this->getFilterables());
+        $this->apply($builder, $options);
+
+        return $this->get();
     }
 
     /**
-     * Get expiration minutes for the cache.
+     * Enable a specific feature.
      */
-    public function getCacheExpiration(): int
+    public function enableFeature(string $feature): self
     {
-        return $this->cacheExpiration;
+        if (array_key_exists($feature, $this->features)) {
+            $this->features[$feature] = true;
+        }
+
+        return $this;
     }
 
     /**
-     * Set expiration minutes for the cache.
-     *
-     * @param  int  $value  Expiration minutes for the cache.
+     * Enable multiple features at once.
      */
-    public function setCacheExpiration(int $value): self
+    public function enableFeatures(array $features): self
     {
-        $this->cacheExpiration = $value;
+        foreach ($features as $feature) {
+            $this->enableFeature($feature);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Disable a specific feature.
+     */
+    public function disableFeature(string $feature): self
+    {
+        if (array_key_exists($feature, $this->features)) {
+            $this->features[$feature] = false;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Check if a feature is enabled.
+     */
+    public function hasFeature(string $feature): bool
+    {
+        return $this->features[$feature] ?? false;
+    }
+
+    /**
+     * Get execution statistics and query info for debugging.
+     */
+    public function getDebugInfo(): array
+    {
+        $debugInfo = [
+            'state' => $this->state,
+            'filters_applied' => $this->getCurrentFilters(),
+            'features_enabled' => array_filter($this->features),
+            'options' => $this->options,
+        ];
+
+        // Add SQL info if we have a builder
+        if ($this->builder) {
+            $debugInfo['sql'] = $this->builder->toSql();
+            $debugInfo['bindings'] = $this->builder->getBindings();
+        }
+
+        // Add performance metrics if available
+        if ($this->hasFeature('performance')) {
+            $debugInfo['metrics'] = $this->getMetrics();
+        }
+
+        return $debugInfo;
+    }
+
+    /**
+     * Get the Eloquent builder instance.
+     */
+    public function getBuilder(): ?Builder
+    {
+        return $this->builder;
+    }
+
+    /**
+     * Set the Eloquent builder instance.
+     */
+    public function setBuilder(Builder $builder): self
+    {
+        $this->builder = $builder;
 
         return $this;
     }
@@ -365,122 +388,17 @@ abstract class Filter implements FilterInterface
     }
 
     /**
-     * Get the Eloquent builder instance.
+     * Reset the filter to its initial state.
      */
-    public function getBuilder(): Builder
+    public function reset(): self
     {
-        return $this->builder;
-    }
-
-    /**
-     * Set the Eloquent builder instance.
-     */
-    public function setBuilder(Builder $builder): self
-    {
-        $this->builder = $builder;
+        $this->state = 'initialized';
+        $this->builder = null;
+        $this->lastException = null;
+        $this->filterables = [];
+        $this->currentFilters = [];
+        $this->customFilters = [];
 
         return $this;
-    }
-
-    /**
-     * Set the Logger instance.
-     */
-    public function setLogger(LoggerInterface $logger): self
-    {
-        $this->logger = $logger;
-
-        return $this;
-    }
-
-    /**
-     * Get the Logger instance.
-     */
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger ?? app(LoggerInterface::class);
-    }
-
-    /**
-     * Enable logging.
-     */
-    public static function enableLogging(): void
-    {
-        self::$shouldLog = true;
-    }
-
-    /**
-     * Disable logging.
-     */
-    public static function disableLogging(): void
-    {
-        self::$shouldLog = false;
-    }
-
-    /**
-     * Get indicates if logging should be used.
-     */
-    public static function shouldLog(): bool
-    {
-        return self::$shouldLog;
-    }
-
-    /**
-     * Set whether to use cache.
-     */
-    public static function enableCaching(?bool $useCache = true): void
-    {
-        self::$useCache = $useCache;
-    }
-
-    /**
-     * Disable caching.
-     */
-    public static function disableCaching(): void
-    {
-        self::$useCache = false;
-    }
-
-    /**
-     * Clear the cache.
-     */
-    public function clearCache(): void
-    {
-        if (self::shouldLog()) {
-            $this->getLogger()->info('Clearing cache for filter', [
-                'cache_key' => $this->buildCacheKey(),
-            ]);
-        }
-
-        $this->cache->forget($this->buildCacheKey());
-    }
-
-    /**
-     * Get the value of cache
-     */
-    public function getCacheHandler(): Cache
-    {
-        if (is_null($this->cache)) {
-            $this->cache = app(Cache::class);
-        }
-
-        return $this->cache;
-    }
-
-    /**
-     * Set the value of cache
-     */
-    public function setCacheHandler(Cache $cache): self
-    {
-        $this->cache = $cache;
-
-        return $this;
-    }
-
-    /**
-     * Get indicates if caching should be used.
-     */
-    public static function shouldCache(): bool
-    {
-        return self::$useCache;
     }
 }

@@ -2,15 +2,13 @@
 
 namespace Filterable\Tests\Fixtures;
 
-use Filterable\Interfaces\Filterable as FilterableInterface;
 use Filterable\Traits\Filterable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MockFilterable extends Model implements FilterableInterface
+class MockFilterable extends Model
 {
-    use Filterable;
-    use HasFactory;
+    use Filterable, HasFactory;
 
     /**
      * The table associated with the model.
@@ -22,20 +20,21 @@ class MockFilterable extends Model implements FilterableInterface
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var array
      */
     protected $fillable = [
         'name',
         'email',
+        'status',
+        'age',
         'is_visible',
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array
+     * Create a new factory instance for the model.
      */
-    protected $casts = [
-        'is_visible' => 'boolean',
-    ];
+    protected static function newFactory()
+    {
+        return MockFilterableFactory::new();
+    }
 }
