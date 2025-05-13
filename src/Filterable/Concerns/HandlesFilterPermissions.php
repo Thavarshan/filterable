@@ -12,6 +12,16 @@ trait HandlesFilterPermissions
     protected array $filterPermissions = [];
 
     /**
+     * Set permission requirements for filters.
+     */
+    public function setFilterPermissions(array $permissions): self
+    {
+        $this->filterPermissions = $permissions;
+
+        return $this;
+    }
+
+    /**
      * Check if the user has permission to use all requested filters.
      */
     protected function checkFilterPermissions(): void
@@ -51,15 +61,5 @@ trait HandlesFilterPermissions
         // Override this method in your specific filter class
         // to implement your authorization logic
         return true;
-    }
-
-    /**
-     * Set permission requirements for filters.
-     */
-    public function setFilterPermissions(array $permissions): self
-    {
-        $this->filterPermissions = $permissions;
-
-        return $this;
     }
 }

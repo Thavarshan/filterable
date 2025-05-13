@@ -25,6 +25,36 @@ trait HandlesRateLimiting
     protected array $filterComplexity = [];
 
     /**
+     * Set the maximum number of filters.
+     */
+    public function setMaxFilters(int $max): self
+    {
+        $this->maxFilters = $max;
+
+        return $this;
+    }
+
+    /**
+     * Set the maximum complexity score.
+     */
+    public function setMaxComplexity(int $max): self
+    {
+        $this->maxComplexity = $max;
+
+        return $this;
+    }
+
+    /**
+     * Set complexity scores for specific filters.
+     */
+    public function setFilterComplexity(array $complexityMap): self
+    {
+        $this->filterComplexity = $complexityMap;
+
+        return $this;
+    }
+
+    /**
      * Check if the filter request exceeds the rate limit.
      */
     protected function checkRateLimits(): bool
@@ -102,35 +132,5 @@ trait HandlesRateLimiting
         }
 
         return $complexity;
-    }
-
-    /**
-     * Set the maximum number of filters.
-     */
-    public function setMaxFilters(int $max): self
-    {
-        $this->maxFilters = $max;
-
-        return $this;
-    }
-
-    /**
-     * Set the maximum complexity score.
-     */
-    public function setMaxComplexity(int $max): self
-    {
-        $this->maxComplexity = $max;
-
-        return $this;
-    }
-
-    /**
-     * Set complexity scores for specific filters.
-     */
-    public function setFilterComplexity(array $complexityMap): self
-    {
-        $this->filterComplexity = $complexityMap;
-
-        return $this;
     }
 }

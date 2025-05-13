@@ -15,25 +15,6 @@ trait ManagesMemory
     protected bool $useLazyCollection = false;
 
     /**
-     * Execute the query with memory management.
-     * This method is called from the Filter::get() method when memory management is enabled.
-     */
-    protected function executeQueryWithMemoryManagement(): Collection
-    {
-        $chunkSize = $this->options['chunk_size'] ?? 1000;
-
-        // If we need the full collection but want to load it in chunks
-        // to avoid memory issues
-        $collection = new Collection;
-
-        $this->getBuilder()->chunk($chunkSize, function ($results) use ($collection) {
-            $collection->push(...$results);
-        });
-
-        return $collection;
-    }
-
-    /**
      * Execute the query and return a lazy collection.
      */
     public function lazy(int $chunkSize = 1000): LazyCollection
@@ -145,5 +126,24 @@ trait ManagesMemory
         }
 
         return $this->getBuilder()->chunk($chunkSize, $callback);
+    }
+
+    /**
+     * Execute the query with memory management.
+     * This method is called from the Filter::get() method when memory management is enabled.
+     */
+    protected function executeQueryWithMemoryManagement(): Collection
+    {
+        $chunkSize = $this->options['chunk_size'] ?? 1000;
+
+        // If we need the full collection but want to load it in chunks
+        // to avoid memory issues
+        $collection = new Collection;
+
+        $this->getBuilder()->chunk($chunkSize, function ($results) use ($collection) {
+            $collection->push(...$results);
+        });
+
+        return $collection;
     }
 }

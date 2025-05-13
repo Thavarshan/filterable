@@ -20,6 +20,60 @@ trait InteractsWithCache
     protected ?Cache $cache = null;
 
     /**
+     * Get expiration minutes for the cache.
+     */
+    public function getCacheExpiration(): int
+    {
+        return $this->cacheExpiration;
+    }
+
+    /**
+     * Set expiration minutes for the cache.
+     */
+    public function setCacheExpiration(int $minutes): Filter
+    {
+        $this->cacheExpiration = $minutes;
+
+        return $this;
+    }
+
+    /**
+     * Get the cache handler.
+     */
+    public function getCacheHandler(): Cache
+    {
+        if (is_null($this->cache)) {
+            $this->cache = app(Cache::class);
+        }
+
+        return $this->cache;
+    }
+
+    /**
+     * Set the cache handler.
+     */
+    public function setCacheHandler(Cache $cache): Filter
+    {
+        $this->cache = $cache;
+
+        return $this;
+    }
+
+    /**
+     * Clear the cache.
+     */
+    public function clearCache(): void
+    {
+        if ($this->hasFeature('logging')) {
+            $this->getLogger()->info('Clearing cache for filter', [
+                'cache_key' => $this->buildCacheKey(),
+            ]);
+        }
+
+        $this->getCacheHandler()->forget($this->buildCacheKey());
+    }
+
+    /**
      * Apply the filterables to the query with caching.
      */
     protected function applyFilterablesWithCache(): Collection
@@ -101,59 +155,5 @@ trait InteractsWithCache
                 return $this->getBuilder()->get();
             }
         );
-    }
-
-    /**
-     * Get expiration minutes for the cache.
-     */
-    public function getCacheExpiration(): int
-    {
-        return $this->cacheExpiration;
-    }
-
-    /**
-     * Set expiration minutes for the cache.
-     */
-    public function setCacheExpiration(int $minutes): Filter
-    {
-        $this->cacheExpiration = $minutes;
-
-        return $this;
-    }
-
-    /**
-     * Get the cache handler.
-     */
-    public function getCacheHandler(): Cache
-    {
-        if (is_null($this->cache)) {
-            $this->cache = app(Cache::class);
-        }
-
-        return $this->cache;
-    }
-
-    /**
-     * Set the cache handler.
-     */
-    public function setCacheHandler(Cache $cache): Filter
-    {
-        $this->cache = $cache;
-
-        return $this;
-    }
-
-    /**
-     * Clear the cache.
-     */
-    public function clearCache(): void
-    {
-        if ($this->hasFeature('logging')) {
-            $this->getLogger()->info('Clearing cache for filter', [
-                'cache_key' => $this->buildCacheKey(),
-            ]);
-        }
-
-        $this->getCacheHandler()->forget($this->buildCacheKey());
     }
 }

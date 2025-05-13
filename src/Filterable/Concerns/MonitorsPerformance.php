@@ -22,31 +22,6 @@ trait MonitorsPerformance
     protected array $metrics = [];
 
     /**
-     * Start timing the filter application.
-     */
-    protected function startTiming(): void
-    {
-        $this->startTime = microtime(true);
-    }
-
-    /**
-     * End timing the filter application.
-     */
-    protected function endTiming(): void
-    {
-        $this->endTime = microtime(true);
-        $this->metrics['execution_time'] = $this->endTime - $this->startTime;
-
-        if (method_exists($this, 'logInfo')) {
-            $this->logInfo('Filter executed', [
-                'execution_time' => $this->metrics['execution_time'],
-                'memory_usage' => memory_get_usage(true),
-                'filter_count' => count($this->getFilterables()),
-            ]);
-        }
-    }
-
-    /**
      * Add a custom metric.
      */
     public function addMetric(string $key, mixed $value): self
@@ -70,5 +45,30 @@ trait MonitorsPerformance
     public function getExecutionTime(): ?float
     {
         return $this->metrics['execution_time'] ?? null;
+    }
+
+    /**
+     * Start timing the filter application.
+     */
+    protected function startTiming(): void
+    {
+        $this->startTime = microtime(true);
+    }
+
+    /**
+     * End timing the filter application.
+     */
+    protected function endTiming(): void
+    {
+        $this->endTime = microtime(true);
+        $this->metrics['execution_time'] = $this->endTime - $this->startTime;
+
+        if (method_exists($this, 'logInfo')) {
+            $this->logInfo('Filter executed', [
+                'execution_time' => $this->metrics['execution_time'],
+                'memory_usage' => memory_get_usage(true),
+                'filter_count' => count($this->getFilterables()),
+            ]);
+        }
     }
 }

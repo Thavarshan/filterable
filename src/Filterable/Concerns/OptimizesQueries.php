@@ -24,28 +24,6 @@ trait OptimizesQueries
     protected array $eagerLoadRelations = [];
 
     /**
-     * Configure the query for optimal performance.
-     */
-    protected function optimizeQuery(): void
-    {
-        // Select only needed columns
-        if (! is_null($this->selectColumns)) {
-            $this->getBuilder()->select($this->selectColumns);
-        }
-
-        // Add eager loading for relationships
-        if (! empty($this->eagerLoadRelations)) {
-            $this->getBuilder()->with($this->eagerLoadRelations);
-        }
-
-        // Use query chunking for large datasets if configured
-        if (isset($this->options['chunk_size']) && is_numeric($this->options['chunk_size'])) {
-            // We'll set a flag to use chunking when executing
-            $this->options['use_chunking'] = true;
-        }
-    }
-
-    /**
      * Set specific columns to select to reduce data transfer.
      */
     public function select(array $columns): self
@@ -90,5 +68,27 @@ trait OptimizesQueries
         $this->getBuilder()->from($this->getBuilder()->getQuery()->from." USE INDEX ({$index})");
 
         return $this;
+    }
+
+    /**
+     * Configure the query for optimal performance.
+     */
+    protected function optimizeQuery(): void
+    {
+        // Select only needed columns
+        if (! is_null($this->selectColumns)) {
+            $this->getBuilder()->select($this->selectColumns);
+        }
+
+        // Add eager loading for relationships
+        if (! empty($this->eagerLoadRelations)) {
+            $this->getBuilder()->with($this->eagerLoadRelations);
+        }
+
+        // Use query chunking for large datasets if configured
+        if (isset($this->options['chunk_size']) && is_numeric($this->options['chunk_size'])) {
+            // We'll set a flag to use chunking when executing
+            $this->options['use_chunking'] = true;
+        }
     }
 }
