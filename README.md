@@ -1,58 +1,66 @@
-[![Filterable](https://i.ibb.co/VQth3zr/Banner.png)](https://github.com/Thavarshan/filterable)
+[![Filterable](./assets/Banner.png)](https://github.com/Thavarshan/filterable)
 
 # About Filterable
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
-[![Tests](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml/badge.svg?label=tests&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/run-tests.yml)
-[![Check & fix styling](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml/badge.svg?label=code%20style&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/php-cs-fixer.yml)
+[![Tests](https://github.com/Thavarshan/filterable/actions/workflows/tests.yml/badge.svg?label=tests&branch=main)](https://github.com/Thavarshan/filterable/actions/workflows/tests.yml)
+[![Lint](https://github.com/Thavarshan/filterable/actions/workflows/lint.yml/badge.svg)](https://github.com/Thavarshan/filterable/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/Thavarshan/filterable/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/Thavarshan/filterable/actions/workflows/github-code-scanning/codeql)
+[![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen.svg)](https://phpstan.org/)
+[![PHP Version](https://img.shields.io/packagist/php-v/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
+[![License](https://img.shields.io/packagist/l/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
 [![Total Downloads](https://img.shields.io/packagist/dt/jerome/filterable.svg)](https://packagist.org/packages/jerome/filterable)
+[![GitHub Stars](https://img.shields.io/github/stars/Thavarshan/filterable.svg?style=social&label=Stars)](https://github.com/Thavarshan/filterable/stargazers)
 
-The `Filter` class provides a flexible and powerful way to apply dynamic filters to Laravel's Eloquent queries. It supports caching, user-specific filtering, and custom filter methods, making it suitable for a wide range of applications, from simple blogs to complex data-driven platforms.
+The `Filterable` package provides a robust, feature-rich solution for applying dynamic filters to Laravel's Eloquent queries. With a modular, trait-based architecture, it supports advanced features like intelligent caching, user-specific filtering, performance monitoring, memory management, and much more. It's suitable for applications of any scale, from simple blogs to complex enterprise-level data platforms.
 
 ## Features
 
-- **Dynamic Filtering**: Apply filters based on request parameters with ease.
-- **Caching**: Improve performance by caching query results.
-- **User-specific Filtering**: Easily implement filters that depend on the authenticated user.
-- **Custom Filter Methods**: Extend the class to add your own filter methods.
+- **Dynamic Filtering**: Apply filters based on request parameters with ease
+- **Modular Architecture**: Customize your filter implementation using traits
+- **Smart Caching**: Both simple and intelligent caching strategies with automatic cache key generation
+- **User-Specific Filtering**: Easily implement user-scoped filters
+- **Rate Limiting**: Control filter complexity and prevent abuse
+- **Validation**: Validate filter inputs before processing
+- **Permission Control**: Apply permission-based access to specific filters
+- **Performance Monitoring**: Track execution time and query performance
+- **Memory Management**: Optimize memory usage for large datasets with lazy loading and chunking
+- **Query Optimization**: Intelligent query building with column selection and relationship loading
+- **Logging**: Comprehensive logging capabilities for debugging and monitoring
+- **Filter Chaining**: Chain multiple filter operations with a fluent API
+- **Value Transformation**: Transform input values before applying filters
+- **Custom Pre-Filters**: Register filters to run before the main filters
 
 ## Installation
 
-To integrate the `Filterable` package into your Laravel project, you can install it via Composer. Run the following command in your project directory:
+To integrate the `Filterable` package into your Laravel project, install it via Composer:
 
 ```bash
 composer require jerome/filterable
 ```
 
-Upon installation, the package should automatically register its service provider with Laravel's service container, making its features readily available throughout your application. This leverages Laravel's package auto-discovery mechanism, which is supported in Laravel 5.5 and later versions.
+The package automatically registers its service provider with Laravel's service container through auto-discovery (Laravel 5.5+).
 
-If you are using a version of Laravel that does not support package auto-discovery, you will need to manually register the `FilterableServiceProvider` in your `config/app.php` file, under the `providers` array:
+For older Laravel versions, manually register the `FilterableServiceProvider` in your `config/app.php` file:
 
 ```php
 'providers' => [
     // Other service providers...
-
     Filterable\Providers\FilterableServiceProvider::class,
 ],
 ```
-
-This step is typically not necessary for modern Laravel installations, as auto-discovery should handle it for you.
-
-After installation and registration, you're ready to use the `Filterable` features to enhance your Laravel application's data querying capabilities.
 
 ## Usage
 
 ### Creating a Filter Class
 
-You can create a new filter class using the following Artisan command:
+Create a new filter class using the Artisan command:
 
 ```bash
 php artisan make:filter PostFilter
 ```
 
-This command will generate a new filter class in the `app/Filters` directory. You can then customise this class to add your own filter methods.
-
-The `Filter` class is a base class that provides the core functionality for applying filters to Eloquent queries. You can extend this class to create your own filter classes tailored to your specific models. To use the `Filter` class, you first need to extend it to create your own filter class tailored to your specific model. Here's a basic example for a `Post` model:
+This generates a filter class in the `app/Filters` directory. Extend the base `Filter` class to implement your specific filtering logic:
 
 ```php
 namespace App\Filters;
@@ -63,6 +71,22 @@ use Illuminate\Database\Eloquent\Builder;
 class PostFilter extends Filter
 {
     protected array $filters = ['status', 'category'];
+
+    /**
+     * Enable specific features for this filter.
+     */
+    public function __construct(Request $request, ?Cache $cache = null, ?LoggerInterface $logger = null)
+    {
+        parent::__construct($request, $cache, $logger);
+
+        // Enable the features you need
+        $this->enableFeatures([
+            'validation',
+            'caching',
+            'logging',
+            'performance',
+        ]);
+    }
 
     protected function status(string $value): Builder
     {
@@ -76,29 +100,22 @@ class PostFilter extends Filter
 }
 ```
 
-To add a new filter, simply define a new method within your custom filter class. This method should adhere to PHP's **camelCase** naming convention and be named descriptively based on the filter's purpose. Once you've implemented the method, ensure to register its name in the `$filters` array to activate it. Here's how you can do it:
+#### Adding Custom Filters
+
+To add a new filter, define a method within your filter class using **camelCase** naming, and register it in the `$filters` array:
 
 ```php
-namespace App\Filters;
+protected array $filters = ['last_published_at'];
 
-use Filterable\Filter;
-
-class PostFilter extends Filter
+protected function lastPublishedAt(string $value): Builder
 {
-    protected array $filters = ['last_published_at'];
-
-    protected function lastPublishedAt(int $value): Builder
-    {
-        return $this->builder->where('last_published_at', $value);
-    }
+    return $this->builder->where('last_published_at', $value);
 }
 ```
 
-In this example, a new filter `lastPublishedAt` is created in the PostFilter class. The filter name `last_published_at` is registered in the `$filters` array.
+### Implementing the `Filterable` Trait and Interface
 
-### Implementing the `Filterable` Trait and `Filterable` Interface
-
-To use the `Filter` class in your Eloquent models, you need to implement the `Filterable` interface and use the `Filterable` trait. Here's an example for a `Post` model:
+Apply the `Filterable` interface and trait to your Eloquent models:
 
 ```php
 namespace App\Models;
@@ -113,22 +130,19 @@ class Post extends Model implements FilterableInterface
 }
 ```
 
-> **Note**: The `Filterable` interface and `Filterable` trait are included in the package and should be used in your models to enable filtering. The `Filterable` interface is optional but recommended for consistency.
-
 ### Applying Filters
 
-You can apply filters to your Eloquent queries like so:
+Basic usage:
 
 ```php
 use App\Models\Post;
+use App\Filters\PostFilter;
 
-$filter = new PostFilter(request(), cache());
+$filter = new PostFilter(request(), cache(), logger());
 $posts = Post::filter($filter)->get();
 ```
 
-### Applying Filters in Controllers
-
-You can apply your custom filters in your controller methods like so:
+In a controller:
 
 ```php
 use App\Models\Post;
@@ -150,9 +164,229 @@ class PostController extends Controller
 }
 ```
 
-### Applying Filters Scoped to the Authenticated User
+### Advanced Features
 
-You can also apply filters that are specific to the authenticated user. The `forUser` method sets the user for which the filters should be applied:
+#### Feature Management
+
+Selectively enable features for your filter:
+
+```php
+// Enable individual features
+$filter->enableFeature('validation');
+$filter->enableFeature('caching');
+
+// Enable multiple features at once
+$filter->enableFeatures([
+    'validation',
+    'caching',
+    'logging',
+    'performance',
+]);
+
+// Disable a feature
+$filter->disableFeature('caching');
+
+// Check if a feature is enabled
+if ($filter->hasFeature('caching')) {
+    // Do something
+}
+```
+
+#### User-Scoped Filtering
+
+Apply filters that are specific to the authenticated user:
+
+```php
+$filter->forUser($request->user());
+```
+
+#### Pre-Filters
+
+Apply pre-filters that run before the main filters:
+
+```php
+$filter->registerPreFilters(function (Builder $query) {
+    return $query->where('published', true);
+});
+```
+
+#### Validation
+
+Set validation rules for your filter inputs:
+
+```php
+$filter->setValidationRules([
+    'status' => 'required|in:active,inactive',
+    'category_id' => 'sometimes|integer|exists:categories,id',
+]);
+
+// Add custom validation messages
+$filter->setValidationMessages([
+    'status.in' => 'Status must be either active or inactive',
+]);
+```
+
+#### Permission Control
+
+Define permission requirements for specific filters:
+
+```php
+$filter->setFilterPermissions([
+    'admin_only_filter' => 'admin',
+    'editor_filter' => ['editor', 'admin'],
+]);
+
+// Implement the permission check in your filter class
+protected function userHasPermission(string|array $permission): bool
+{
+    if (is_array($permission)) {
+        return collect($permission)->contains(fn ($role) => $this->forUser->hasRole($role));
+    }
+
+    return $this->forUser->hasRole($permission);
+}
+```
+
+#### Rate Limiting
+
+Control the complexity of filter requests:
+
+```php
+// Set the maximum number of filters that can be applied at once
+$filter->setMaxFilters(10);
+
+// Set the maximum complexity score for all filters combined
+$filter->setMaxComplexity(100);
+
+// Define complexity scores for specific filters
+$filter->setFilterComplexity([
+    'complex_filter' => 10,
+    'simple_filter' => 1,
+]);
+```
+
+#### Memory Management
+
+Optimize memory usage for large datasets:
+
+```php
+// Process a query with lazy loading
+$posts = $filter->lazy()->each(function ($post) {
+    // Process each post with minimal memory usage
+});
+
+// Use chunking for large datasets
+$filter->chunk(1000, function ($posts) {
+    // Process posts in chunks of 1000
+});
+
+// Map over query results without loading all records
+$result = $filter->map(function ($post) {
+    return $post->title;
+});
+```
+
+#### Query Optimization
+
+Optimize database queries:
+
+```php
+// Select only needed columns
+$filter->select(['id', 'title', 'status']);
+
+// Eager load relationships
+$filter->with(['author', 'comments']);
+
+// Set chunk size for large datasets
+$filter->chunkSize(1000);
+
+// Use a database index hint
+$filter->useIndex('idx_posts_status');
+```
+
+#### Caching
+
+Configure caching behavior:
+
+```php
+// Set cache expiration time (in minutes)
+$filter->setCacheExpiration(60);
+
+// Manually clear the cache
+$filter->clearCache();
+
+// Use tagged cache for better invalidation
+$filter->cacheTags(['posts', 'api']);
+
+// Enable specific caching modes
+$filter->cacheResults(true);
+$filter->cacheCount(true);
+```
+
+#### Logging
+
+Configure and use logging:
+
+```php
+// Set a custom logger
+$filter->setLogger($customLogger);
+
+// Logging is automatically handled if enabled
+// You can also add custom logging in your filter methods:
+protected function customFilter($value): Builder
+{
+    $this->logInfo("Applying custom filter with value: {$value}");
+
+    return $this->builder->where('custom_field', $value);
+}
+```
+
+#### Performance Monitoring
+
+Track and analyze filter performance:
+
+```php
+// Get performance metrics after applying filters
+$metrics = $filter->getMetrics();
+
+// Add custom metrics
+$filter->addMetric('custom_metric', $value);
+
+// Get execution time
+$executionTime = $filter->getExecutionTime();
+```
+
+#### Filter Chaining
+
+Chain multiple filter operations with a fluent API:
+
+```php
+$filter->where('status', 'active')
+       ->whereIn('category_id', [1, 2, 3])
+       ->whereBetween('created_at', [$startDate, $endDate])
+       ->orderBy('created_at', 'desc');
+```
+
+#### Value Transformation
+
+Transform filter values before applying them:
+
+```php
+// Register a transformer for a filter
+$filter->registerTransformer('date', function ($value) {
+    return Carbon::parse($value)->toDateTimeString();
+});
+```
+
+#### Debug Information
+
+Get detailed information about the applied filters:
+
+```php
+$debugInfo = $filter->getDebugInfo();
+```
+
+### Complete Example
 
 ```php
 use App\Models\Post;
@@ -163,288 +397,73 @@ class PostController extends Controller
 {
     public function index(Request $request, PostFilter $filter)
     {
+        // Enable features
+        $filter->enableFeatures([
+            'validation',
+            'caching',
+            'logging',
+            'performance',
+        ]);
+
+        // Set validation rules
+        $filter->setValidationRules([
+            'status' => 'sometimes|in:active,inactive',
+            'category_id' => 'sometimes|integer|exists:categories,id',
+        ]);
+
+        // Apply user scope
         $filter->forUser($request->user());
 
-        $query = Post::filter($filter);
-
-        $posts = $request->has('paginate')
-            ? $query->paginate($request->query('per_page', 20))
-            : $query->get();
-
-        return response()->json($posts);
-    }
-}
-```
-
-### Applying Pre-Filters to run before the main filters
-
-You can also apply pre-filters that run before the main filters. The `registerPreFilters` method sets the pre-filters that should be applied:
-
-```php
-use App\Models\Post;
-use App\Filters\PostFilter;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
-
-class PostController extends Controller
-{
-    public function index(Request $request, PostFilter $filter)
-    {
-        $filter->registerPreFilters(function (Builder $query) {
+        // Apply pre-filters
+        $filter->registerPreFilters(function ($query) {
             return $query->where('published', true);
         });
 
+        // Set caching options
+        $filter->setCacheExpiration(30);
+        $filter->cacheTags(['posts', 'api']);
+
+        // Apply custom filter chain
+        $filter->where('is_featured', true)
+               ->orderBy('created_at', 'desc');
+
+        // Apply filters to the query
         $query = Post::filter($filter);
 
+        // Get paginated results
         $posts = $request->has('paginate')
             ? $query->paginate($request->query('per_page', 20))
             : $query->get();
 
-        return response()->json($posts);
+        // Get performance metrics if needed
+        $metrics = null;
+        if ($filter->hasFeature('performance')) {
+            $metrics = $filter->getMetrics();
+        }
+
+        return response()->json([
+            'data' => $posts,
+            'metrics' => $metrics,
+        ]);
     }
 }
 ```
 
-### Using Filters on the Frontend
+## Frontend Usage
 
-You can use filters on the frontend by sending a request with query parameters. For example, to filter posts by status, you can send a request like this:
+Send filter parameters as query parameters:
 
 ```typescript
+// Filter posts by status
 const response = await fetch('/posts?status=active');
 
-const data = await response.json();
-```
-
-This request will return all posts with the status `active`.
-
-You can also string together all the filters you want to apply. For example, to filter posts by status and category, you can send a request like this:
-
-```typescript
-const response = await fetch('/posts?status=active&category_id=2');
-
-const data = await response.json();
-```
-
-This request will return all posts with the status `active` and associated with the category of ID `2`.
-
-> **Note**: Any query parameters that do not match the filter names will be ignored.
-
-### Caching
-
-In your filter class, you can control caching by using the `enableCaching` static method. Set the `$useCache` static property to `true` to enable caching, or `false` to disable it. You can also customise the duration of the cache by modifying the `$cacheExpiration` property.`
-
-> **Note**: Caching is disabled by default.
-
-```php
-/**
- * Indicates if caching should be used.
- *
- * @var bool
- */
-protected static bool $useCache = false;
-```
-
-#### Enabling and Disabling Caching
-
-- **Enable Caching**: To start caching, ensure that caching is enabled. This is typically done during the setup or dynamically based on the application context, such as only enabling caching in a production environment to improve performance and reduce database load.
-
-```php
-// AppServiceProvider.php
-
-/**
- * Bootstrap any application services.
- *
- * @return void
- */
-public function boot(): void
-{
-    // Enable caching globally through methods...
-    Filter::enableCaching();
-}
-```
-
-- **Disable Caching**: If you need to turn off caching temporarily, for example, during development to ensure fresh data is loaded on each request and to aid in debugging, you can disable it:
-
-```php
-// AppServiceProvider.php
-
-/**
- * Bootstrap any application services.
- *
- * @return void
- */
-public function boot(): void
-{
-    // Disable caching globally through methods...
-    Filter::disableCaching();
-}
-```
-
-This configuration allows you to manage caching settings centrally from the `AppServiceProvider`. Adjusting caching behavior based on the environment or specific scenarios helps optimize performance and resource utilization effectively.
-
-```php
-namespace App\Filters;
-
-use Filterable\Filter;
-
-class PostFilter extends Filter
-{
-    protected array $filters = ['last_published_at'];
-
-    protected function lastPublishedAt(int $value): Builder
-    {
-        return $this->builder->where('last_published_at', $value);
-    }
-}
-
-$filter = new PostFilter(request(), cache());
-
-// Control caching
-$filter->setCacheExpiration(1440); // Cache duration in minutes
-```
-
-Certainly! Here’s a detailed usage guide section that explains how to utilize the logging functionality in the `Filter` class. This guide is designed to help developers understand and implement logging within the context of filtering operations effectively.
-
-### Logging
-
-The `Filter` class incorporates robust logging capabilities to aid in debugging and monitoring the application of filters to query builders. This functionality is crucial for tracing issues, understanding filter impacts, and ensuring the system behaves as expected.
-
-#### Configuring the Logger
-
-1. **Setting Up Logger**: Before you can log any activities, you must provide a logger instance to the `Filter` class. This logger should conform to the `Psr\Log\LoggerInterface`. Typically, this is set up in the constructor or through a setter method if the logger might change during the lifecycle of the application.
-
-```php
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-
-// Create a logger instance
-$logger = new Logger('name');
-$logger->pushHandler(new StreamHandler('path/to/your.log', Logger::WARNING));
-
-// Set the logger to the filter class
-$filter->setLogger($logger);
-```
-
-2. **Dependency Injection**: If you are using Laravel, you can leverage its service container to automatically inject the logger into your `Filter` class.
-
-```php
-// In a service provider or similar setup
-$this->app->when(Filter::class)
-    ->needs(LoggerInterface::class)
-    ->give(function () {
-        return new Logger('name', [new StreamHandler('path/to/your.log', Logger::WARNING)]);
-    });
-```
-
-#### Setting Up Logger with a Custom Channel
-
-You can set up a specific logging channel for your `Filter` class either by configuring it directly in the logger setup or by defining it in Laravel’s logging configuration and then injecting it. Here’s how to do it in both ways:
-
-1. **Direct Configuration**:
-
-   - Directly create a logger with a specific channel and handler. This method is straightforward and gives you full control over the logger’s configuration:
-
-```php
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-
-// Create a logger instance for the Filter class with a custom channel
-$logger = new Logger('filter');
-$logger->pushHandler(new StreamHandler(storage_path('logs/filter.log'), Logger::DEBUG));
-
-// Set the logger to the filter class
-$filter->setLogger($logger);
-```
-
-2. **Using Laravel's Logging Configuration**:
-
-   - Laravel allows you to define custom channels in its logging configuration file (`config/logging.php`). You can define a specific channel for the `Filter` class there and then retrieve it using the `Log` facade:
-
-```php
-// In config/logging.php
-
-'channels' => [
-    'filter' => [
-        'driver' => 'single',
-        'path' => storage_path('logs/filter.log'),
-        'level' => 'debug',
-    ],
-],
-```
-
-- Now, you can set this logger in your service provider or directly in your class using the `Log` facade:
-
-```php
-use Illuminate\Support\Facades\Log;
-
-// In your AppServiceProvider or wherever you set up the Filter class
-$filter->setLogger(Log::channel('filter'));
-```
-
-#### Enabling and Disabling Logging
-
-- **Enable Logging**: To start logging, ensure that logging is enabled. This is typically done during setup or dynamically based on application context (e.g., only logging in a development environment).
-
-```php
-// AppServiceProvider.php
-
-/**
- * Bootstrap any application services.
- *
- * @return void
- */
-public function boot(): void
-{
-    // Enable logging globally through methods...
-    Filter::enableLogging();
-}
-```
-
-- **Disable Logging**: If you need to turn off logging temporarily (e.g., in a production environment to improve performance), you can disable it:
-
-```php
-// AppServiceProvider.php
-
-/**
- * Bootstrap any application services.
- *
- * @return void
- */
-public function boot(): void
-{
-    // Disable logging globally through methods...
-    Filter::disableLogging();
-}
-```
-
-#### Logging Actions
-
-- **Automatic Logging**: Once the logger is set and enabled, the `Filter` class will automatically log relevant actions based on the methods being called and the filters being applied. This includes logging at various points such as when filters are added, when queries are executed, and when cache hits or misses occur.
-
-- **Custom Logging**: You can add custom logging within the filters you define or by extending the `Filter` class. This can be useful for logging specific conditions or additional data that the default logging does not cover.
-
-```php
-public function customFilter($value) {
-    if (self::shouldLog()) {
-        $this->getLogger()->info("Applying custom filter with value: {$value}");
-    }
-    // Filter logic here
-}
-```
-
-#### Checking If Logging Is Enabled
-
-- **Conditional Logging**: Before logging any custom messages, check if logging is enabled to avoid unnecessary processing or logging errors.
-
-```php
-if (Filter::shouldLog()) {
-    $this->getLogger()->info('Performing an important action');
-}
+// Combine multiple filters
+const response = await fetch('/posts?status=active&category_id=2&is_featured=1');
 ```
 
 ## Testing
 
-Testing your filters can be done using PHPUnit. Here’s an example test that ensures a `status` filter is applied correctly:
+Testing your filters using PHPUnit:
 
 ```php
 namespace Tests\Unit;
@@ -470,10 +489,27 @@ class PostFilterTest extends TestCase
         $this->assertTrue($filteredPosts->contains($activePost));
         $this->assertFalse($filteredPosts->contains($inactivePost));
     }
+
+    public function testRateLimitingRejectsComplexQueries(): void
+    {
+        // Create a filter with too many parameters
+        $filter = new PostFilter(new Request([
+            'param1' => 'value1',
+            'param2' => 'value2',
+            // ... many more parameters
+        ]));
+
+        $filter->enableFeature('rateLimit');
+        $filter->setMaxFilters(5);
+
+        // Apply the filter and check if rate limiting was triggered
+        $result = Post::filter($filter)->get();
+
+        // Assert that no results were returned due to rate limiting
+        $this->assertEmpty($result);
+    }
 }
 ```
-
-Ensure you have the necessary testing environment set up, including any required migrations or factory definitions.
 
 ## License
 
@@ -481,11 +517,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repository and create a pull request. You can also simply open an issue with the tag "enhancement".
-
-Don't forget to give the project a star! Thanks again!
+Contributions are welcome and greatly appreciated! If you have suggestions to make this package better, please fork the repository and create a pull request, or open an issue with the tag "enhancement".
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/amazing-feature`)
