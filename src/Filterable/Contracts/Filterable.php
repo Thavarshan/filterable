@@ -1,13 +1,10 @@
 <?php
 
-namespace Filterable\Interfaces;
+namespace Filterable\Contracts;
 
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 
-/**
- * Interface Filterable
- */
 interface Filterable
 {
     /**

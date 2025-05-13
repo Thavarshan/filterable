@@ -3,7 +3,7 @@
 namespace Filterable\Traits;
 
 use Exception;
-use Filterable\Interfaces\Filter;
+use Filterable\Contracts\Filter;
 use Illuminate\Database\Eloquent\Builder;
 
 trait Filterable

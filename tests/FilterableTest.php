@@ -3,17 +3,12 @@
 namespace Filterable\Tests;
 
 use Exception;
-use Filterable\Interfaces\Filter;
+use Filterable\Contracts\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Traits\Filterable;
 use Illuminate\Database\Eloquent\Builder;
 use Mockery as m;
 
-/**
- * Class FilterableTest.
- *
- * @covers \Filterable\Traits\Filterable
- */
 final class FilterableTest extends TestCase
 {
     /**

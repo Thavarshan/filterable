@@ -2,32 +2,43 @@
 
 namespace Filterable\Tests\Fixtures;
 
-use Filterable\Filter;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Http\Request;
+use Psr\Log\LoggerInterface;
 
-class MockFilter extends Filter
+class MockFilter extends TestFilter
 {
     /**
-     * The filters that should be applied to the data.
+     * Registered filters.
+     *
+     * @var array<string>
      */
-    protected array $filters = [
-        'name',
-        'email',
-    ];
+    protected array $filters = ['name', 'email'];
 
     /**
-     * Filter the query by a given name.
+     * Create a new filter instance.
      */
-    public function name(string $name): Builder
-    {
-        return $this->builder->where('name', 'LIKE', "%{$name}%");
+    public function __construct(
+        protected Request $request,
+        ?Cache $cache = null,
+        ?LoggerInterface $logger = null
+    ) {
+        parent::__construct($request, $cache, $logger);
     }
 
     /**
-     * Filter the query by a given email.
+     * Filter by name.
      */
-    public function email(string $email): Builder
+    protected function name(string $value): void
     {
-        return $this->builder->where('email', $email);
+        $this->builder->where('name', 'LIKE', "%{$value}%");
+    }
+
+    /**
+     * Filter by email.
+     */
+    protected function email(string $value): void
+    {
+        $this->builder->where('email', 'LIKE', "%{$value}%");
     }
 }

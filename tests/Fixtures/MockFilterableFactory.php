@@ -1,19 +1,15 @@
 <?php
 
-namespace Filterable\Database\Factories;
+namespace Filterable\Tests\Fixtures;
 
-use Filterable\Tests\Fixtures\MockFilterable;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Filterable\Tests\Fixtures\MockFilterable>
- */
 class MockFilterableFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model|TModel>
+     * @var string
      */
     protected $model = MockFilterable::class;
 
@@ -25,8 +21,11 @@ class MockFilterableFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->name(),
-            'email' => $this->faker->unique()->safeEmail(),
+            'name' => $this->faker->name,
+            'email' => $this->faker->unique()->safeEmail,
+            'status' => $this->faker->randomElement(['active', 'inactive', 'pending']),
+            'age' => $this->faker->numberBetween(18, 65),
+            'is_visible' => true,
         ];
     }
 }

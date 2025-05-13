@@ -1,6 +1,6 @@
 <?php
 
-namespace Filterable\Interfaces;
+namespace Filterable\Contracts;
 
 use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -89,7 +89,7 @@ interface Filter
     /**
      * Get the Eloquent builder instance.
      */
-    public function getBuilder(): Builder;
+    public function getBuilder(): ?Builder;
 
     /**
      * Set the Eloquent builder instance.
@@ -124,7 +124,7 @@ interface Filter
     /**
      * Set whether to use cache.
      */
-    public static function enableCaching(?bool $useCache = true): void;
+    public static function enableCaching(): void;
 
     /**
      * Disable caching.
