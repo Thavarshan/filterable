@@ -4,6 +4,7 @@ namespace Filterable\Console;
 
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -116,7 +117,7 @@ class MakeFilterCommand extends GeneratorCommand
     protected function parseModel(string $model): string
     {
         if (preg_match('([^A-Za-z0-9_/\\\\])', $model)) {
-            throw new \InvalidArgumentException('Model name contains invalid characters.');
+            throw new InvalidArgumentException('Model name contains invalid characters.');
         }
 
         return $this->qualifyModel($model);
