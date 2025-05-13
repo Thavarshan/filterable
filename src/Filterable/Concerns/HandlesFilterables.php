@@ -5,7 +5,6 @@ namespace Filterable\Concerns;
 use BadMethodCallException;
 use Closure;
 use Filterable\Contracts\Filter;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
 trait HandlesFilterables
@@ -18,7 +17,7 @@ trait HandlesFilterables
     /**
      * Registered filters to operate upon.
      *
-     * @var array<string>
+     * @var array<int, string>
      */
     protected array $filters = [];
 

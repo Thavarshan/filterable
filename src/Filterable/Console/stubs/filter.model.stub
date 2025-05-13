@@ -1,0 +1,130 @@
+<?php
+
+namespace {{ namespace }};
+
+use Filterable\Filter;
+use Illuminate\Database\Eloquent\Builder;
+use {{ namespacedModel }};
+
+class {{ class }} extends Filter
+{
+    /**
+     * Registered filters to operate upon.
+     *
+     * @var array<int, string>
+     */
+    protected array $filters = [
+        'search',
+        'sort',
+        // Add model-specific filters here:
+        // '{{ modelVariable }}_id',
+        // 'status',
+        // 'created_at',
+    ];
+
+    /**
+     * Filter by search term across multiple columns.
+     *
+     * @param string $value
+     * @return Builder
+     */
+    protected function search(string $value): Builder
+    {
+        return $this->getBuilder()->where(function ($query) use ($value) {
+            // Add searchable fields for {{ model }}:
+            $query->where('name', 'like', "%{$value}%");
+                  // ->orWhere('description', 'like', "%{$value}%")
+                  // ->orWhere('email', 'like', "%{$value}%");
+        });
+    }
+
+    /**
+     * Sort the results by a given column and direction.
+     *
+     * @param string $value
+     * @return Builder
+     */
+    protected function sort(string $value): Builder
+    {
+        [$column, $direction] = array_pad(explode(':', $value), 2, 'asc');
+        $direction = in_array(strtolower($direction), ['asc', 'desc']) ? $direction : 'asc';
+
+        // Validate allowed columns for sorting
+        $allowedColumns = [
+            'id',
+            'created_at',
+            'updated_at',
+            // Add model-specific sortable columns here
+        ];
+
+        if (!in_array($column, $allowedColumns)) {
+            $column = 'created_at';
+        }
+
+        return $this->getBuilder()->orderBy($column, $direction);
+    }
+
+    /**
+     * Example: Filter by {{ modelVariable }} ID
+     *
+     * @param int|string $value
+     * @return Builder
+     */
+    // protected function {{ modelVariable }}Id($value): Builder
+    // {
+    //     return $this->getBuilder()->where('{{ modelVariable }}_id', $value);
+    // }
+
+    /**
+     * Example: Filter by status
+     *
+     * @param string $value
+     * @return Builder
+     */
+    // protected function status(string $value): Builder
+    // {
+    //     return $this->getBuilder()->where('status', $value);
+    // }
+
+    /**
+     * Example: Filter by date range
+     *
+     * @param string $value
+     * @return Builder
+     */
+    // protected function createdAt(string $value): Builder
+    // {
+    //     [$start, $end] = array_pad(explode(',', $value), 2, null);
+    //
+    //     $query = $this->getBuilder();
+    //
+    //     if ($start) {
+    //         $query->whereDate('created_at', '>=', $start);
+    //     }
+    //
+    //     if ($end) {
+    //         $query->whereDate('created_at', '<=', $end);
+    //     }
+    //
+    //     return $query;
+    // }
+
+    /**
+     * Register pre-filters for the {{ model }}.
+     *
+     * @return $this
+     */
+    public function setupFilter(): self
+    {
+        // Example: Always filter active {{ modelVariable }}s
+        // $this->registerPreFilters(function (Builder $query) {
+        //     return $query->where('is_active', true);
+        // });
+
+        // Enable features as needed
+        // $this->enableFeature('caching');
+        // $this->enableFeature('logging');
+
+        return $this;
+    }
+}
