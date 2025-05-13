@@ -14,6 +14,11 @@
 
 The `Filterable` package provides a robust, feature-rich solution for applying dynamic filters to Laravel's Eloquent queries. With a modular, trait-based architecture, it supports advanced features like intelligent caching, user-specific filtering, performance monitoring, memory management, and much more. It's suitable for applications of any scale, from simple blogs to complex enterprise-level data platforms.
 
+## Requirements
+
+- PHP 8.2+
+- Laravel 10.x, 11.x, or 12.x
+
 ## Features
 
 - **Dynamic Filtering**: Apply filters based on request parameters with ease
@@ -30,6 +35,11 @@ The `Filterable` package provides a robust, feature-rich solution for applying d
 - **Filter Chaining**: Chain multiple filter operations with a fluent API
 - **Value Transformation**: Transform input values before applying filters
 - **Custom Pre-Filters**: Register filters to run before the main filters
+- **Comprehensive Debugging**: Detailed debug information about applied filters and query execution
+- **Conditional Execution**: Use Laravel's conditionable trait for conditional filter application
+- **Smart Error Handling**: Graceful handling of filtering exceptions
+- **Flexible State Management**: Monitor and manage the filter execution state
+- **Chainable Configuration**: Fluent API for configuration with method chaining
 
 ## Installation
 
@@ -60,13 +70,40 @@ Create a new filter class using the Artisan command:
 php artisan make:filter PostFilter
 ```
 
-This generates a filter class in the `app/Filters` directory. Extend the base `Filter` class to implement your specific filtering logic:
+This command supports several options:
+
+| Option | Shortcut | Description |
+|--------|----------|-------------|
+| `--basic` | `-b` | Creates a basic filter class with minimal functionality |
+| `--model=ModelName` | `-m ModelName` | Generates a filter for the specified model |
+| `--force` | `-f` | Creates the class even if the filter already exists |
+
+Examples:
+
+```bash
+# Create a basic filter
+php artisan make:filter PostFilter --basic
+
+# Create a filter for a specific model
+php artisan make:filter PostFilter --model=Post
+
+# Force creation of a filter
+php artisan make:filter PostFilter --force
+
+# Combine options
+php artisan make:filter PostFilter --model=Post --force
+```
+
+The command generates a filter class in the `app/Filters` directory. Extend the base `Filter` class to implement your specific filtering logic:
 
 ```php
 namespace App\Filters;
 
 use Filterable\Filter;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Contracts\Cache\Repository as Cache;
+use Psr\Log\LoggerInterface;
 
 class PostFilter extends Filter
 {
@@ -164,6 +201,53 @@ class PostController extends Controller
 }
 ```
 
+### Laravel 12 Support
+
+For Laravel 12, which has moved to a more minimal initial setup, make sure to follow these additional steps:
+
+1. **Service Registration**: If you're using a minimal Laravel 12 application, you may need to manually register the service provider in your `bootstrap/providers.php` file:
+
+```php
+return [
+    // Other service providers...
+    Filterable\Providers\FilterableServiceProvider::class,
+];
+```
+
+2. **Invokable Controllers**: If you're using Laravel 12's invokable controllers, here's how to apply filters:
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Post;
+use App\Filters\PostFilter;
+use Illuminate\Http\Request;
+
+class PostIndexController extends Controller
+{
+    public function __invoke(Request $request, PostFilter $filter)
+    {
+        $query = Post::filter($filter);
+
+        $posts = $request->has('paginate')
+            ? $query->paginate($request->query('per_page', 20))
+            : $query->get();
+
+        return response()->json($posts);
+    }
+}
+```
+
+3. **Route Registration**: Using the new routing style in Laravel 12:
+
+```php
+use App\Http\Controllers\PostIndexController;
+
+Route::get('/posts', PostIndexController::class);
+```
+
 ### Advanced Features
 
 #### Feature Management
@@ -190,6 +274,41 @@ $filter->disableFeature('caching');
 if ($filter->hasFeature('caching')) {
     // Do something
 }
+```
+
+##### Available Features
+
+The Filterable package supports the following features that can be enabled or disabled:
+
+| Feature | Description |
+|---------|-------------|
+| `validation` | Validates filter inputs before applying them |
+| `permissions` | Enables permission-based access to filters |
+| `rateLimit` | Controls filter complexity and prevents abuse |
+| `caching` | Caches query results for improved performance |
+| `logging` | Provides comprehensive logging capabilities |
+| `performance` | Monitors execution time and query performance |
+| `optimization` | Optimizes queries with selective columns and eager loading |
+| `memoryManagement` | Optimizes memory usage for large datasets |
+| `filterChaining` | Enables fluent chaining of multiple filter operations |
+| `valueTransformation` | Transforms input values before applying filters |
+
+Each feature can be enabled independently based on your specific needs:
+
+```php
+// Enable all features
+$filter->enableFeatures([
+    'validation',
+    'permissions',
+    'rateLimit',
+    'caching',
+    'logging',
+    'performance',
+    'optimization',
+    'memoryManagement',
+    'filterChaining',
+    'valueTransformation',
+]);
 ```
 
 #### User-Scoped Filtering
@@ -284,6 +403,29 @@ $filter->chunk(1000, function ($posts) {
 $result = $filter->map(function ($post) {
     return $post->title;
 });
+
+// Filter results without loading all records
+$result = $filter->filter(function ($post) {
+    return $post->status === 'active';
+});
+
+// Reduce results without loading all records
+$total = $filter->reduce(function ($carry, $post) {
+    return $carry + $post->views;
+}, 0);
+
+// Get a lazy collection with custom chunk size
+$lazyCollection = $filter->lazy(500);
+
+// Process each item with minimal memory usage
+$filter->lazyEach(function ($item) {
+    // Process item
+}, 500);
+
+// Create a generator to iterate with minimal memory
+foreach ($filter->cursor() as $item) {
+    // Process item
+}
 ```
 
 #### Query Optimization
@@ -321,6 +463,15 @@ $filter->cacheTags(['posts', 'api']);
 // Enable specific caching modes
 $filter->cacheResults(true);
 $filter->cacheCount(true);
+
+// Get the number of items with caching
+$count = $filter->count();
+
+// Clear related caches when models change
+$filter->clearRelatedCaches(Post::class);
+
+// Get SQL query without executing it
+$sql = $filter->toSql();
 ```
 
 #### Logging
@@ -330,6 +481,14 @@ Configure and use logging:
 ```php
 // Set a custom logger
 $filter->setLogger($customLogger);
+
+// Get the current logger
+$logger = $filter->getLogger();
+
+// Log at different levels
+$filter->logInfo("Applying filter", ['filter' => 'status']);
+$filter->logDebug("Filter details", ['value' => $value]);
+$filter->logWarning("Potential issue", ['problem' => 'description']);
 
 // Logging is automatically handled if enabled
 // You can also add custom logging in your filter methods:
@@ -363,6 +522,7 @@ Chain multiple filter operations with a fluent API:
 ```php
 $filter->where('status', 'active')
        ->whereIn('category_id', [1, 2, 3])
+       ->whereNotIn('tag_id', [4, 5])
        ->whereBetween('created_at', [$startDate, $endDate])
        ->orderBy('created_at', 'desc');
 ```
@@ -376,6 +536,47 @@ Transform filter values before applying them:
 $filter->registerTransformer('date', function ($value) {
     return Carbon::parse($value)->toDateTimeString();
 });
+
+// Register a transformer for an array of values
+$arrayTransformer = function($values) {
+    return array_map(fn($value) => strtolower($value), $values);
+};
+$filter->registerTransformer('tags', $arrayTransformer);
+```
+
+#### Conditional Execution
+
+Use Laravel's conditionable trait for conditional filter application:
+
+```php
+// Only apply a filter if a condition is met
+$filter->when($request->has('status'), function ($filter) use ($request) {
+    $filter->where('status', $request->status);
+});
+
+// Apply one filter or another based on a condition
+$filter->when($request->has('sort'),
+    function ($filter) use ($request) {
+        $filter->orderBy($request->sort);
+    },
+    function ($filter) {
+        $filter->orderBy('created_at', 'desc');
+    }
+);
+```
+
+#### State Management
+
+Monitor and manage the filter execution state:
+
+```php
+// Check the current state
+if ($filter->getDebugInfo()['state'] === 'applied') {
+    // Process results
+}
+
+// Reset the filter to its initial state
+$filter->reset();
 ```
 
 #### Debug Information
@@ -384,6 +585,40 @@ Get detailed information about the applied filters:
 
 ```php
 $debugInfo = $filter->getDebugInfo();
+
+// Debug info includes:
+// - Current state
+// - Applied filters
+// - Enabled features
+// - Query options
+// - SQL query and bindings
+// - Performance metrics (if enabled)
+```
+
+#### Error Handling
+
+Customize exception handling for your filters:
+
+```php
+class MyFilter extends Filter
+{
+    protected function handleFilteringException(Throwable $exception): void
+    {
+        // Log the exception
+        $this->logWarning('Filter exception', [
+            'message' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
+        ]);
+
+        // Optionally rethrow specific exceptions
+        if ($exception instanceof MyCustomException) {
+            throw $exception;
+        }
+
+        // Otherwise, let the parent handle it
+        parent::handleFilteringException($exception);
+    }
+}
 ```
 
 ### Complete Example

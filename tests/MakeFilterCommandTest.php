@@ -22,28 +22,6 @@ class MakeFilterCommandTest extends TestCase
         parent::tearDown();
     }
 
-    private function cleanUpFilters(): void
-    {
-        // Delete test filter files if they exist
-        $filtersToClean = [
-            'FooFilter',
-            'BasicFilter',
-            'UserFilter',
-            'CustomFilter',
-        ];
-
-        foreach ($filtersToClean as $filter) {
-            if (File::exists(app_path("Filters/{$filter}.php"))) {
-                File::delete(app_path("Filters/{$filter}.php"));
-            }
-        }
-
-        // Ensure the Filters directory exists
-        if (! File::exists(app_path('Filters'))) {
-            File::makeDirectory(app_path('Filters'), 0755, true);
-        }
-    }
-
     public function test_can_generate_a_new_filter_class(): void
     {
         $this->artisan('make:filter', ['name' => 'FooFilter'])
@@ -137,5 +115,27 @@ class CustomFilter', $initialContent)
         // Check that the original file is unchanged
         $content = File::get(app_path('Filters/CustomFilter.php'));
         $this->assertStringContainsString('// MARKER COMMENT', $content);
+    }
+
+    private function cleanUpFilters(): void
+    {
+        // Delete test filter files if they exist
+        $filtersToClean = [
+            'FooFilter',
+            'BasicFilter',
+            'UserFilter',
+            'CustomFilter',
+        ];
+
+        foreach ($filtersToClean as $filter) {
+            if (File::exists(app_path("Filters/{$filter}.php"))) {
+                File::delete(app_path("Filters/{$filter}.php"));
+            }
+        }
+
+        // Ensure the Filters directory exists
+        if (! File::exists(app_path('Filters'))) {
+            File::makeDirectory(app_path('Filters'), 0755, true);
+        }
     }
 }

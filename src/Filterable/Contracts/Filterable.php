@@ -10,7 +10,6 @@ interface Filterable
     /**
      * Apply all relevant space filters.
      *
-     *
      * @return \Illuminate\Database\Eloquent\Builder $query
      *
      * @throws Exception

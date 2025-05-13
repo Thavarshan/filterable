@@ -7,6 +7,7 @@ use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Mockery as m;
@@ -218,7 +219,7 @@ class CachingTest extends TestCase
             }
 
             // Override apply to set our builder
-            public function apply($builder, ?array $options = []): \Illuminate\Database\Eloquent\Builder
+            public function apply($builder, ?array $options = []): Builder
             {
                 $this->builder = $this->testBuilder;
                 $this->state = 'applied';
