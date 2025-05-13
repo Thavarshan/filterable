@@ -62,66 +62,6 @@ trait HandlesFilterables
     }
 
     /**
-     * Apply the filterables to the query.
-     */
-    protected function applyFilterables(): void
-    {
-        // Use hasFeature('caching') instead of shouldCache()
-        if (method_exists($this, 'hasFeature') && $this->hasFeature('caching')) {
-            $this->applyFilterablesWithCache();
-
-            return;
-        }
-
-        $this->applyFiltersToQuery();
-    }
-
-    /**
-     * Execute the query builder query functionality with the filters applied.
-     */
-    protected function applyFiltersToQuery(): void
-    {
-        collect($this->getFilterables())
-            ->filter(fn (mixed $value) => $value !== null
-                && $value !== ''
-                && $value !== false
-                && $value !== [])
-            ->each(function ($value, $filter) {
-                $this->applyFilterable($filter, $value);
-            });
-    }
-
-    /**
-     * Apply a filter to the query.
-     */
-    protected function applyFilterable(string $filter, mixed $value): void
-    {
-        $method = $this->makeFilterIntoMethodName($filter);
-
-        if (! method_exists($this, $method)) {
-            throw new BadMethodCallException(
-                sprintf('Method [%s] does not exist on %s', $method, static::class)
-            );
-        }
-
-        // Use hasFeature('logging') instead of just checking if method exists
-        $this->logInfo("Applying filter method: {$method}", [
-            'filter' => $filter,
-            'value' => $value,
-        ]);
-
-        call_user_func([$this, $method], $value);
-    }
-
-    /**
-     * Make the filter into a method name.
-     */
-    protected function makeFilterIntoMethodName(string $filter): string
-    {
-        return $this->filterMethodMap[$filter] ?? Str::camel($filter);
-    }
-
-    /**
      * Fetch all relevant filters (key, value) from the request.
      *
      * @return array<string, mixed>
@@ -183,5 +123,65 @@ trait HandlesFilterables
     public function asCollectionFilter(): Closure
     {
         return fn (mixed $items) => collect($this->getFilterables());
+    }
+
+    /**
+     * Apply the filterables to the query.
+     */
+    protected function applyFilterables(): void
+    {
+        // Use hasFeature('caching') instead of shouldCache()
+        if (method_exists($this, 'hasFeature') && $this->hasFeature('caching')) {
+            $this->applyFilterablesWithCache();
+
+            return;
+        }
+
+        $this->applyFiltersToQuery();
+    }
+
+    /**
+     * Execute the query builder query functionality with the filters applied.
+     */
+    protected function applyFiltersToQuery(): void
+    {
+        collect($this->getFilterables())
+            ->filter(fn (mixed $value) => $value !== null
+                && $value !== ''
+                && $value !== false
+                && $value !== [])
+            ->each(function ($value, $filter) {
+                $this->applyFilterable($filter, $value);
+            });
+    }
+
+    /**
+     * Apply a filter to the query.
+     */
+    protected function applyFilterable(string $filter, mixed $value): void
+    {
+        $method = $this->makeFilterIntoMethodName($filter);
+
+        if (! method_exists($this, $method)) {
+            throw new BadMethodCallException(
+                sprintf('Method [%s] does not exist on %s', $method, static::class)
+            );
+        }
+
+        // Use hasFeature('logging') instead of just checking if method exists
+        $this->logInfo("Applying filter method: {$method}", [
+            'filter' => $filter,
+            'value' => $value,
+        ]);
+
+        call_user_func([$this, $method], $value);
+    }
+
+    /**
+     * Make the filter into a method name.
+     */
+    protected function makeFilterIntoMethodName(string $filter): string
+    {
+        return $this->filterMethodMap[$filter] ?? Str::camel($filter);
     }
 }

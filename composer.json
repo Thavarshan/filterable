@@ -53,12 +53,9 @@
         "squizlabs/php_codesniffer": "^3.7"
     },
     "scripts": {
-        "test": "vendor/bin/phpunit",
-        "test-coverage": "phpunit --coverage-html coverage",
-        "analyse": "chmod +x bin/analysis.sh && ./bin/analysis.sh",
-        "analyse:static": "vendor/bin/phpstan analyse",
         "lint": "chmod +x bin/lint.sh && ./bin/lint.sh",
-        "fix": "chmod +x bin/fix.sh && ./bin/fix.sh"
+        "fix": "chmod +x bin/fix.sh && ./bin/fix.sh",
+        "test": "chmod +x bin/test.sh && ./bin/test.sh"
     },
     "config": {
         "sort-packages": true,

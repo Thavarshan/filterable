@@ -13,6 +13,24 @@ trait InteractsWithLogging
     protected ?LoggerInterface $logger = null;
 
     /**
+     * Set the Logger instance.
+     */
+    public function setLogger(LoggerInterface $logger): Filter
+    {
+        $this->logger = $logger;
+
+        return $this;
+    }
+
+    /**
+     * Get the Logger instance.
+     */
+    public function getLogger(): LoggerInterface
+    {
+        return $this->logger ?? app(LoggerInterface::class);
+    }
+
+    /**
      * Log an informational message.
      */
     protected function logInfo(string $message, array $context = []): void
@@ -40,23 +58,5 @@ trait InteractsWithLogging
         if ($this->hasFeature('logging')) {
             $this->getLogger()->warning($message, $context);
         }
-    }
-
-    /**
-     * Set the Logger instance.
-     */
-    public function setLogger(LoggerInterface $logger): Filter
-    {
-        $this->logger = $logger;
-
-        return $this;
-    }
-
-    /**
-     * Get the Logger instance.
-     */
-    public function getLogger(): LoggerInterface
-    {
-        return $this->logger ?? app(LoggerInterface::class);
     }
 }

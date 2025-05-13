@@ -204,35 +204,6 @@ abstract class Filter implements FilterContract
     }
 
     /**
-     * Transform filter values if transformers are registered.
-     * This method is called before applying filters if valueTransformation is enabled.
-     */
-    protected function transformFilterValues(): void
-    {
-        if (empty($this->transformers)) {
-            return;
-        }
-
-        $filterables = $this->getFilterables();
-
-        foreach ($filterables as $filter => $value) {
-            if (isset($this->transformers[$filter])) {
-                $this->filterables[$filter] = $this->transformFilterValue($filter, $value);
-            }
-        }
-    }
-
-    /**
-     * Handle exceptions that occur during filtering.
-     * Subclasses can override this method to customize exception handling.
-     */
-    protected function handleFilteringException(Throwable $exception): void
-    {
-        // By default, don't rethrow the exception
-        // Subclasses can override this to change behavior
-    }
-
-    /**
      * Execute the query and get the results.
      */
     public function get(): Collection
@@ -408,5 +379,34 @@ abstract class Filter implements FilterContract
         $this->customFilters = [];
 
         return $this;
+    }
+
+    /**
+     * Transform filter values if transformers are registered.
+     * This method is called before applying filters if valueTransformation is enabled.
+     */
+    protected function transformFilterValues(): void
+    {
+        if (empty($this->transformers)) {
+            return;
+        }
+
+        $filterables = $this->getFilterables();
+
+        foreach ($filterables as $filter => $value) {
+            if (isset($this->transformers[$filter])) {
+                $this->filterables[$filter] = $this->transformFilterValue($filter, $value);
+            }
+        }
+    }
+
+    /**
+     * Handle exceptions that occur during filtering.
+     * Subclasses can override this method to customize exception handling.
+     */
+    protected function handleFilteringException(Throwable $exception): void
+    {
+        // By default, don't rethrow the exception
+        // Subclasses can override this to change behavior
     }
 }

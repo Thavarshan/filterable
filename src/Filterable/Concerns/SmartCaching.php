@@ -27,20 +27,6 @@ trait SmartCaching
     protected bool $shouldCacheCount = false;
 
     /**
-     * Get a tagged cache instance if supported.
-     */
-    protected function getTaggedCache(): Cache
-    {
-        $cache = $this->getCacheHandler();
-
-        if (method_exists($cache, 'tags') && ! empty($this->cacheTags)) {
-            return $cache->tags($this->cacheTags);
-        }
-
-        return $cache;
-    }
-
-    /**
      * Set cache tags to use for better invalidation.
      */
     public function cacheTags(array|string $tags): self
@@ -80,6 +66,59 @@ trait SmartCaching
     public function toSql(): string
     {
         return $this->getBuilder()->toSql();
+    }
+
+    /**
+     * Get count with caching.
+     */
+    public function count(): int
+    {
+        if (! method_exists($this, 'hasFeature') ||
+            ! $this->hasFeature('caching') ||
+            ! $this->shouldCacheCount) {
+            return $this->getBuilder()->count();
+        }
+
+        $cache = $this->getTaggedCache();
+        $cacheKey = $this->buildCacheKey().':count';
+
+        return $cache->remember(
+            $cacheKey,
+            Carbon::now()->addMinutes($this->getCacheExpiration()),
+            function (): int {
+                return $this->getBuilder()->count();
+            }
+        );
+    }
+
+    /**
+     * Clear related caches when models change.
+     */
+    public function clearRelatedCaches(string $modelClass): void
+    {
+        if (empty($this->cacheTags)) {
+            return;
+        }
+
+        $taggedCache = $this->getTaggedCache();
+
+        if (method_exists($taggedCache, 'flush')) {
+            $taggedCache->flush();
+        }
+    }
+
+    /**
+     * Get a tagged cache instance if supported.
+     */
+    protected function getTaggedCache(): Cache
+    {
+        $cache = $this->getCacheHandler();
+
+        if (method_exists($cache, 'tags') && ! empty($this->cacheTags)) {
+            return $cache->tags($this->cacheTags);
+        }
+
+        return $cache;
     }
 
     /**
@@ -139,44 +178,5 @@ trait SmartCaching
                 return $this->getBuilder()->get();
             }
         );
-    }
-
-    /**
-     * Get count with caching.
-     */
-    public function count(): int
-    {
-        if (! method_exists($this, 'hasFeature') ||
-            ! $this->hasFeature('caching') ||
-            ! $this->shouldCacheCount) {
-            return $this->getBuilder()->count();
-        }
-
-        $cache = $this->getTaggedCache();
-        $cacheKey = $this->buildCacheKey().':count';
-
-        return $cache->remember(
-            $cacheKey,
-            Carbon::now()->addMinutes($this->getCacheExpiration()),
-            function (): int {
-                return $this->getBuilder()->count();
-            }
-        );
-    }
-
-    /**
-     * Clear related caches when models change.
-     */
-    public function clearRelatedCaches(string $modelClass): void
-    {
-        if (empty($this->cacheTags)) {
-            return;
-        }
-
-        $taggedCache = $this->getTaggedCache();
-
-        if (method_exists($taggedCache, 'flush')) {
-            $taggedCache->flush();
-        }
     }
 }

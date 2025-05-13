@@ -22,36 +22,6 @@ trait ValidatesFilterInput
     protected array $validationMessages = [];
 
     /**
-     * Validate the filter inputs before applying them.
-     *
-     * @throws ValidationException
-     */
-    protected function validateFilterInputs(): void
-    {
-        if (empty($this->validationRules)) {
-            return;
-        }
-
-        $filterables = $this->getFilterables();
-
-        // Only validate filters that have corresponding rules
-        $toValidate = array_intersect_key($filterables, $this->validationRules);
-
-        if (empty($toValidate)) {
-            return;
-        }
-
-        if (method_exists($this, 'logInfo')) {
-            $this->logInfo('Validating filter inputs', [
-                'inputs' => $toValidate,
-                'rules' => array_intersect_key($this->validationRules, $toValidate),
-            ]);
-        }
-
-        Validator::make($toValidate, $this->validationRules, $this->validationMessages)->validate();
-    }
-
-    /**
      * Set validation rules for filter inputs.
      */
     public function setValidationRules(array $rules): self
@@ -79,5 +49,35 @@ trait ValidatesFilterInput
         $this->validationMessages = $messages;
 
         return $this;
+    }
+
+    /**
+     * Validate the filter inputs before applying them.
+     *
+     * @throws ValidationException
+     */
+    protected function validateFilterInputs(): void
+    {
+        if (empty($this->validationRules)) {
+            return;
+        }
+
+        $filterables = $this->getFilterables();
+
+        // Only validate filters that have corresponding rules
+        $toValidate = array_intersect_key($filterables, $this->validationRules);
+
+        if (empty($toValidate)) {
+            return;
+        }
+
+        if (method_exists($this, 'logInfo')) {
+            $this->logInfo('Validating filter inputs', [
+                'inputs' => $toValidate,
+                'rules' => array_intersect_key($this->validationRules, $toValidate),
+            ]);
+        }
+
+        Validator::make($toValidate, $this->validationRules, $this->validationMessages)->validate();
     }
 }
