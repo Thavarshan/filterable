@@ -25,4 +25,16 @@ class {{ class }} extends Filter
     {
         return $this->getBuilder()->where('name_column', $value);
     }
+
+    /**
+     * Apply custom filtering logic here.
+     *
+     * @return void
+     */
+    protected function applyFilterables(): void
+    {
+        parent::applyFilterables();
+
+        // Add custom filtering logic here if needed
+    }
 }

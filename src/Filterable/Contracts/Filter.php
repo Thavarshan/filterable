@@ -8,6 +8,12 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Builder;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @property Filter $filter
+ * @property array<int, string> $filters
+ * @property array<string, string> $filterMethodMap
+ * @property array<string, mixed> $filterables
+ */
 interface Filter
 {
     /**
