@@ -31,7 +31,7 @@ class MockFilter extends TestFilter
      */
     protected function name(string $value): void
     {
-        $this->builder->where('name', 'LIKE', "%{$value}%");
+        $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
     }
 
     /**
@@ -39,6 +39,6 @@ class MockFilter extends TestFilter
      */
     protected function email(string $value): void
     {
-        $this->builder->where('email', 'LIKE', "%{$value}%");
+        $this->getBuilder()->where('email', 'LIKE', "%{$value}%");
     }
 }

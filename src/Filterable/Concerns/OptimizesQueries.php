@@ -30,12 +30,12 @@ trait OptimizesQueries
     {
         // Select only needed columns
         if (! is_null($this->selectColumns)) {
-            $this->builder->select($this->selectColumns);
+            $this->getBuilder()->select($this->selectColumns);
         }
 
         // Add eager loading for relationships
         if (! empty($this->eagerLoadRelations)) {
-            $this->builder->with($this->eagerLoadRelations);
+            $this->getBuilder()->with($this->eagerLoadRelations);
         }
 
         // Use query chunking for large datasets if configured
@@ -74,7 +74,8 @@ trait OptimizesQueries
      */
     public function chunkSize(int $size): self
     {
-        $this->options['chunk_size'] = $size;
+        $this->setOption('chunk_size', $size);
+        $this->setOption('use_chunking', true);
 
         return $this;
     }
@@ -86,7 +87,7 @@ trait OptimizesQueries
     {
         // This will add an index hint in MySQL
         // Note: This is database-specific and may need adaptation
-        $this->builder->from($this->builder->getQuery()->from." USE INDEX ({$index})");
+        $this->getBuilder()->from($this->getBuilder()->getQuery()->from." USE INDEX ({$index})");
 
         return $this;
     }

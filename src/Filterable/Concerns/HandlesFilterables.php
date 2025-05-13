@@ -66,7 +66,8 @@ trait HandlesFilterables
      */
     protected function applyFilterables(): void
     {
-        if (method_exists($this, 'shouldCache') && $this->shouldCache()) {
+        // Use hasFeature('caching') instead of shouldCache()
+        if (method_exists($this, 'hasFeature') && $this->hasFeature('caching')) {
             $this->applyFilterablesWithCache();
 
             return;
@@ -103,12 +104,11 @@ trait HandlesFilterables
             );
         }
 
-        if (method_exists($this, 'logInfo')) {
-            $this->logInfo("Applying filter method: {$method}", [
-                'filter' => $filter,
-                'value' => $value,
-            ]);
-        }
+        // Use hasFeature('logging') instead of just checking if method exists
+        $this->logInfo("Applying filter method: {$method}", [
+            'filter' => $filter,
+            'value' => $value,
+        ]);
 
         call_user_func([$this, $method], $value);
     }

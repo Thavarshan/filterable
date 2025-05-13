@@ -102,8 +102,6 @@
         ]
     },
     "no_leading_import_slash": true,
-    "no_fully_qualified_global_functions": true,
-    "no_fully_qualified_global_constants": true,
     "no_leading_namespace_whitespace": true,
     "no_mixed_echo_print": {
         "use": "echo"

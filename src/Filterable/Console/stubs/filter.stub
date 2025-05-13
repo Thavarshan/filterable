@@ -23,6 +23,6 @@ class {{ class }} extends Filter
      */
     protected function filter(string $value): Builder
     {
-        return $this->builder->where('column', $value);
+        return $this->getBuilder()->where('column', $value);
     }
 }

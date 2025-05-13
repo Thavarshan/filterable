@@ -26,7 +26,7 @@ trait ManagesMemory
         // to avoid memory issues
         $collection = new Collection;
 
-        $this->builder->chunk($chunkSize, function ($results) use ($collection) {
+        $this->getBuilder()->chunk($chunkSize, function ($results) use ($collection) {
             $collection->push(...$results);
         });
 
@@ -43,11 +43,11 @@ trait ManagesMemory
 
         // Apply all filters to the builder if not already applied
         if ($this->state !== 'applied') {
-            $this->apply($this->builder, $this->options);
+            $this->apply($this->getBuilder(), $this->options);
         }
 
         // Return a lazy collection that loads records in chunks
-        return $this->builder->lazy($chunkSize);
+        return $this->getBuilder()->lazy($chunkSize);
     }
 
     /**
@@ -59,11 +59,11 @@ trait ManagesMemory
 
         // Apply all filters to the builder if not already applied
         if ($this->state !== 'applied') {
-            $this->apply($this->builder, $this->options);
+            $this->apply($this->getBuilder(), $this->options);
         }
 
         // Process each item with minimal memory usage
-        $this->builder->lazy($chunkSize)->each($callback);
+        $this->getBuilder()->lazy($chunkSize)->each($callback);
     }
 
     /**
@@ -73,11 +73,11 @@ trait ManagesMemory
     {
         // Apply all filters to the builder if not already applied
         if ($this->state !== 'applied') {
-            $this->apply($this->builder, $this->options);
+            $this->apply($this->getBuilder(), $this->options);
         }
 
         // Use cursor for low memory iteration
-        return $this->builder->cursor();
+        return $this->getBuilder()->cursor();
     }
 
     /**
@@ -144,6 +144,6 @@ trait ManagesMemory
             $this->apply($this->builder, $this->options);
         }
 
-        return $this->builder->chunk($chunkSize, $callback);
+        return $this->getBuilder()->chunk($chunkSize, $callback);
     }
 }

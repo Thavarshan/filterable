@@ -2,6 +2,7 @@
 
 namespace Filterable\Tests;
 
+use Closure;
 use Exception;
 use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
@@ -195,6 +196,15 @@ class FilterTest extends TestCase
 
     public function test_uses_cached_execution_when_caching_enabled(): void
     {
+        $this->cache->shouldReceive('remember')
+            ->once()
+            ->with(
+                'filter:test',           // First parameter: cache key
+                m::type('Carbon\Carbon'), // Second parameter: Carbon instance
+                m::type('Closure')       // Third parameter: Closure
+            )
+            ->andReturn(collect(['cached_item']));
+
         // Create filter with cache
         $filter = new TestFilter($this->request, $this->cache);
 

@@ -80,6 +80,11 @@ interface Filter
     public function getOptions(): array;
 
     /**
+     * Set a specific option value.
+     */
+    public function setOption(string $key, mixed $value): self;
+
+    /**
      * Set the extra options for the filter.
      *
      * @param  array<string, mixed>  $options
@@ -107,31 +112,6 @@ interface Filter
     public function getLogger(): LoggerInterface;
 
     /**
-     * Enable logging.
-     */
-    public static function enableLogging(): void;
-
-    /**
-     * Disable logging.
-     */
-    public static function disableLogging(): void;
-
-    /**
-     * Get indicates if logging should be used.
-     */
-    public static function shouldLog(): bool;
-
-    /**
-     * Set whether to use cache.
-     */
-    public static function enableCaching(): void;
-
-    /**
-     * Disable caching.
-     */
-    public static function disableCaching(): void;
-
-    /**
      * Clear the cache.
      */
     public function clearCache(): void;
@@ -145,9 +125,4 @@ interface Filter
      * Set the value of cache
      */
     public function setCacheHandler(Cache $cache): self;
-
-    /**
-     * Get indicates if caching should be used.
-     */
-    public static function shouldCache(): bool;
 }
