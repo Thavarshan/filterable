@@ -1,6 +1,49 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v1.2.0...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.0.0...HEAD)
+
+## [v2.0.0](https://github.com/Thavarshan/filterable/compare/v1.2.0...v2.0.0) - 2025-05-13
+
+### Added
+
+- Added support for Laravel 12.x
+- Added feature flag system for more granular control over filter capabilities
+- Added comprehensive test suite with 100+ tests for all traits
+- Added `HandlesUserScope` trait for easily filtering by authenticated user
+- Added `HandlesRateLimiting` trait to prevent abuse via complex queries
+- Added `ValidatesFilterInput` trait for input validation
+- Added `MonitorsPerformance` trait for tracking and analyzing filter performance
+- Added `TransformsFilterValues` trait for transforming input values
+- Added `SupportsFilterChaining` trait for fluent API method chaining
+- Added `InteractsWithLogging` trait for improved debugging and auditing
+- Added `OptimizesQueries` trait for better query performance
+- Added `ManagesMemory` trait for handling large datasets efficiently
+- Added support for custom pre-filters via the `HandlesPreFilters` trait
+- Added new artisan command (`make:filter`) with support for model-specific filters
+
+### Changed
+
+- Major architecture overhaul with modular trait-based design
+- Improved SmartCaching with better cache key generation
+- Updated all Cache interactions to use Carbon instances for TTL values
+- Enhanced Filter base class with more robust constructor injection
+- Standardized return types across all methods for better type safety
+- Updated documentation with comprehensive examples for all features
+- Improved error handling with more descriptive exceptions
+- Modernized test cases to use latest PHPUnit assertions
+- Switched to feature-based activation rather than global static methods
+
+### Fixed
+
+- Fixed cache key generation for array values
+- Fixed memory leaks when dealing with large datasets
+- Fixed issues with query builder method chaining
+- Fixed inconsistent behavior with filter application
+- Fixed validation errors not being properly propagated
+- Fixed user scoping not being applied correctly in some scenarios
+- Fixed rate limiting bypass techniques
+- Fixed performance monitoring accuracy
+- Fixed logging inconsistencies when features are toggled
 
 ## [v1.2.0](https://github.com/Thavarshan/filterable/compare/v1.1.7...v1.2.0) - 2025-02-25
 
