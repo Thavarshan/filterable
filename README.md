@@ -1,4 +1,4 @@
-[![Filterable](./assets/Banner.png)](https://github.com/Thavarshan/filterable)
+[![Filterable](./assets/Banner.jpg)](https://github.com/Thavarshan/filterable)
 
 # About Filterable
 
