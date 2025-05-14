@@ -97,11 +97,9 @@ trait InteractsWithCache
         // Create a unique cache key with sanitized inputs
         $userPart = 'global';
 
-        // Only check for getAuthIdentifier if forUser property exists and is not null
-        if (property_exists($this, 'forUser') && $this->forUser !== null) {
-            if (method_exists($this->forUser, 'getAuthIdentifier')) {
-                $userPart = $this->forUser->getAuthIdentifier() ?? 'global';
-            }
+        // Check if forUser property exists, is not null, and has getAuthIdentifier method
+        if (property_exists($this, 'forUser') && $this->forUser !== null && method_exists($this->forUser, 'getAuthIdentifier')) {
+            $userPart = $this->forUser->getAuthIdentifier() ?? 'global';
         }
 
         // Get the filterables, sort them by key, and normalize them
