@@ -95,9 +95,14 @@ trait InteractsWithCache
     protected function buildCacheKey(): string
     {
         // Create a unique cache key with sanitized inputs
-        $userPart = property_exists($this, 'forUser') && method_exists($this->forUser ?? null, 'getAuthIdentifier')
-            ? optional($this->forUser)->getAuthIdentifier() ?? 'global'
-            : 'global';
+        $userPart = 'global';
+
+        // Only check for getAuthIdentifier if forUser property exists and is not null
+        if (property_exists($this, 'forUser') && $this->forUser !== null) {
+            if (method_exists($this->forUser, 'getAuthIdentifier')) {
+                $userPart = $this->forUser->getAuthIdentifier() ?? 'global';
+            }
+        }
 
         // Get the filterables, sort them by key, and normalize them
         $filterables = $this->getFilterables();

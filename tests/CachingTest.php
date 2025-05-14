@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -263,5 +264,93 @@ class CachingTest extends TestCase
         $count = $filter->count();
 
         $this->assertEquals(5, $count);
+    }
+
+    public function test_handles_null_user_gracefully(): void
+    {
+        // Set up expectations for the cache
+        $this->cache->shouldReceive('remember')
+            ->with(
+                m::type('string'), // Cache key should be generated without errors
+                m::type(Carbon::class),
+                m::type('Closure')
+            )
+            ->andReturn(collect([new MockFilterable(['name' => 'John Doe'])]));
+
+        // Create a filter with caching enabled
+        $filter = new TestFilter($this->request, $this->cache);
+        $filter->enableFeature('caching');
+
+        // Set a null user - this is what caused the original error
+        $filter->forUser(null);
+
+        try {
+            // Check that the cache key is built correctly with a null user
+            $reflectionMethod = new ReflectionMethod($filter, 'buildCacheKey');
+            $reflectionMethod->setAccessible(true);
+            $cacheKey = $reflectionMethod->invoke($filter);
+
+            // Cache key should be valid and contain 'filter:' prefix
+            $this->assertIsString($cacheKey);
+            $this->assertStringContainsString('filter:', $cacheKey);
+
+            // Apply the filter and get results - should not throw any errors
+            $filter->apply($this->builder);
+            $results = $filter->get();
+
+            // Verify we got results
+            $this->assertInstanceOf(Collection::class, $results);
+
+            // Test passed if we got here without exceptions
+            $this->assertTrue(true);
+        } catch (\Throwable $e) {
+            $this->fail('Exception was thrown when using null user: '.$e->getMessage());
+        }
+    }
+
+    public function test_handles_user_with_auth_identifier(): void
+    {
+        // Create a mock user with getAuthIdentifier
+        $user = m::mock(Authenticatable::class);
+        $user->shouldReceive('getAuthIdentifier')->once()->andReturn(123);
+        $user->shouldReceive('getAuthIdentifierName')->andReturn('id');
+
+        // Set up cache expectations
+        $this->cache->shouldReceive('remember')
+            ->with(
+                m::type('string'),
+                m::type(Carbon::class),
+                m::type('Closure')
+            )
+            ->andReturn(collect([new MockFilterable(['name' => 'John Doe'])]));
+
+        // Create a filter with caching enabled
+        $filter = new TestFilter($this->request, $this->cache);
+        $filter->enableFeature('caching');
+        $filter->forUser($user);
+
+        try {
+            // Check that the cache key is generated without errors
+            $reflectionMethod = new ReflectionMethod($filter, 'buildCacheKey');
+            $reflectionMethod->setAccessible(true);
+            $cacheKey = $reflectionMethod->invoke($filter);
+
+            // Cache key should be a string
+            $this->assertIsString($cacheKey);
+
+            // Should contain the filter prefix
+            $this->assertStringContainsString('filter:', $cacheKey);
+
+            // Apply filter and get results without errors
+            $filter->apply($this->builder);
+            $results = $filter->get();
+
+            $this->assertInstanceOf(Collection::class, $results);
+
+            // Test passed if we got here without exceptions
+            $this->assertTrue(true);
+        } catch (\Throwable $e) {
+            $this->fail('Exception was thrown when using user with auth identifier: '.$e->getMessage());
+        }
     }
 }
