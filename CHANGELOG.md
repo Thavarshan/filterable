@@ -1,6 +1,27 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.0.0...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.0.1...HEAD)
+
+## [v2.0.1](https://github.com/Thavarshan/filterable/compare/v2.0.0...v2.0.1) - 2025-05-14
+
+### Added
+
+- Focuses on the new tests added to verify the fix and prevent regression
+- Emphasizes that this improves the test coverage for edge cases
+
+### Changed
+
+- Highlights the improvements to error handling and resilience
+- Frames the changes as positive enhancements to the existing code
+- Uses professional, descriptive language without being too technical
+
+### Fixed
+
+- Clearly identifies the specific issue that was fixed
+- References the GitHub issue number for traceability
+- Includes the exact error message for users who might be searching for a solution
+
+**Full Changelog**: https://github.com/Thavarshan/filterable/compare/2.0.0...2.0.1
 
 ## [v2.0.0](https://github.com/Thavarshan/filterable/compare/v1.2.0...v2.0.0) - 2025-05-13
 
