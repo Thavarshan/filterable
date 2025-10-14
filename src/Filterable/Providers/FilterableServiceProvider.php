@@ -13,8 +13,16 @@ class FilterableServiceProvider extends PackageServiceProvider
      */
     public function configurePackage(Package $package): void
     {
-        $package->name('jerome/filterable')
+        $package->name('filterable')
             ->hasConfigFile('filterable')
             ->hasCommand(MakeFilterCommand::class);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getPackageBaseDir(): string
+    {
+        return dirname(__DIR__, 2);
     }
 }

@@ -27,7 +27,13 @@ Filterable is a Laravel package for turning HTTP request parameters into rich, c
 composer require jerome/filterable
 ```
 
-Package auto-discovery registers the `FilterableServiceProvider`, which in turn exposes the `make:filter` Artisan command. No additional publishing steps are required; stubs live under `src/Filterable/Console/stubs/` and can be overridden by placing copies in your application's `stubs` directory.
+Package auto-discovery registers the `FilterableServiceProvider`, which in turn exposes the `make:filter` Artisan command. Publish the configuration when you want to tweak the default feature flags or cache behaviour:
+
+```bash
+php artisan vendor:publish --tag=filterable-config
+```
+
+Stubs live under `src/Filterable/Console/stubs/` and can be overridden by placing copies in your application's `stubs` directory.
 
 ## Highlights
 
