@@ -14,6 +14,5 @@ class FilterApplying
          * @var array<string, mixed>
          */
         public readonly array $options
-    ) {
-    }
+    ) {}
 }

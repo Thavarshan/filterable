@@ -90,10 +90,9 @@ class FilterLifecycleTest extends TestCase
 
     protected function createMockUser(int $id)
     {
-        $user = new class($id) implements \Illuminate\Contracts\Auth\Authenticatable {
-            public function __construct(public int $identifier)
-            {
-            }
+        $user = new class($id) implements \Illuminate\Contracts\Auth\Authenticatable
+        {
+            public function __construct(public int $identifier) {}
 
             public function getAuthIdentifierName()
             {
@@ -120,9 +119,7 @@ class FilterLifecycleTest extends TestCase
                 return null;
             }
 
-            public function setRememberToken($value): void
-            {
-            }
+            public function setRememberToken($value): void {}
 
             public function getRememberTokenName()
             {
