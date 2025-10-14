@@ -1,7 +1,11 @@
 #!/bin/sh
 
-set -e # this makes the script fail on first error
+set -e
 
-chmod +x bin/fix.sh && ./bin/fix.sh
-chmod +x bin/lint.sh && ./bin/lint.sh
-php artisan test || true
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+chmod +x bin/fix.sh bin/lint.sh bin/test.sh
+./bin/fix.sh
+./bin/lint.sh
+composer test
