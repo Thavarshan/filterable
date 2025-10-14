@@ -16,6 +16,20 @@ class TestCase extends BaseTestCase
     /**
      * {@inheritdoc}
      */
+    protected function getEnvironmentSetUp($app): void
+    {
+        $app['config']->set('database.default', 'testing');
+        $app['config']->set('database.connections.testing', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => false,
+        ]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -25,6 +39,8 @@ class TestCase extends BaseTestCase
         Factory::guessFactoryNamesUsing(
             fn (string $modelName) => 'Filterable\\Tests\\Fixtures\\'.class_basename($modelName).'Factory'
         );
+
+        $this->app['config']->set('database.default', 'testing');
     }
 
     /**
@@ -32,15 +48,11 @@ class TestCase extends BaseTestCase
      */
     protected function setUpDatabase(Application $app): void
     {
-        $schemaBuilder = $app['db']->connection('mysql')->getSchemaBuilder();
+        $connectionName = $app['config']->get('database.default', 'testing');
+        $schemaBuilder = $app['db']->connection($connectionName)->getSchemaBuilder();
 
-        if ($schemaBuilder->hasTable('migrations')) {
-            $schemaBuilder->drop('migrations');
-        }
-
-        if ($schemaBuilder->hasTable('mocks')) {
-            $schemaBuilder->drop('mocks');
-        }
+        $schemaBuilder->dropIfExists('migrations');
+        $schemaBuilder->dropIfExists('mocks');
 
         $schemaBuilder->create('migrations', function (Blueprint $table) {
             $table->increments('id');

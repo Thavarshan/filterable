@@ -1,17 +1,23 @@
 <?php
 
-namespace Filterable\Tests;
+namespace Filterable\Tests\Unit;
 
 use Closure;
 use Exception;
+use Filterable\Events\FilterApplied;
+use Filterable\Events\FilterApplying;
+use Filterable\Events\FilterFailed;
 use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\MockTestFilter;
 use Filterable\Tests\Fixtures\TestFilter;
+use Filterable\Tests\TestCase;
+use Illuminate\Cache\RateLimiter;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 use Mockery as m;
 use Psr\Log\LoggerInterface;
@@ -57,6 +63,34 @@ class FilterTest extends TestCase
     {
         m::close();
         parent::tearDown();
+    }
+
+    public function test_applies_feature_defaults_from_configuration(): void
+    {
+        $original = config('filterable.defaults.features.validation');
+        config()->set('filterable.defaults.features.validation', true);
+
+        try {
+            $filter = new TestFilter($this->request);
+
+            $this->assertTrue($filter->hasFeature('validation'));
+        } finally {
+            config()->set('filterable.defaults.features.validation', $original);
+        }
+    }
+
+    public function test_applies_cache_ttl_from_configuration(): void
+    {
+        $originalTtl = config('filterable.defaults.cache.ttl');
+        config()->set('filterable.defaults.cache.ttl', 15);
+
+        try {
+            $filter = new class($this->request) extends Filter {};
+
+            $this->assertEquals(15, $filter->getCacheExpiration());
+        } finally {
+            config()->set('filterable.defaults.cache.ttl', $originalTtl);
+        }
     }
 
     public function test_initializes_with_default_state(): void
@@ -485,5 +519,175 @@ class FilterTest extends TestCase
 
         // Verify builder is set
         $this->assertSame($this->builder, $filter->getBuilder());
+    }
+
+    public function test_stream_requires_apply_before_execution(): void
+    {
+        $filter = new TestFilter($this->request);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('You must call apply() before streaming results.');
+
+        $filter->stream();
+    }
+
+    public function test_dispatches_lifecycle_events_on_successful_apply(): void
+    {
+        Event::fake([FilterApplying::class, FilterApplied::class, FilterFailed::class]);
+
+        $filter = new TestFilter($this->request);
+
+        $filter->apply($this->builder);
+
+        Event::assertDispatched(FilterApplying::class, function (FilterApplying $event) use ($filter) {
+            return $event->filter === $filter
+                && $event->builder === $filter->getBuilder()
+                && $event->options === $filter->getOptions();
+        });
+
+        Event::assertDispatched(FilterApplied::class, function (FilterApplied $event) use ($filter) {
+            return $event->filter === $filter
+                && $event->builder === $filter->getBuilder()
+                && $event->filters === $filter->getCurrentFilters();
+        });
+
+        Event::assertNotDispatched(FilterFailed::class);
+    }
+
+    public function test_dispatches_failure_event_when_exception_occurs(): void
+    {
+        Event::fake([FilterFailed::class]);
+
+        $filter = new class($this->request) extends TestFilter
+        {
+            protected array $filters = ['test'];
+
+            protected function test($value): void
+            {
+                throw new Exception('Test exception');
+            }
+        };
+
+        $filter->appendFilterable('test', 'value');
+
+        $filter->apply($this->builder);
+
+        Event::assertDispatched(FilterFailed::class, function (FilterFailed $event) use ($filter) {
+            return $event->filter === $filter
+                && $event->builder === $filter->getBuilder()
+                && $event->exception instanceof Exception
+                && $event->exception->getMessage() === 'Test exception';
+        });
+    }
+
+    public function test_rate_limit_key_includes_user_identifier_when_available(): void
+    {
+        $request = new Request;
+        $request->server->set('REMOTE_ADDR', '203.0.113.5');
+
+        $filter = new class($request) extends TestFilter
+        {
+            public function callCheckRateLimits(): bool
+            {
+                return $this->checkRateLimits();
+            }
+        };
+
+        $user = m::mock(\Illuminate\Contracts\Auth\Authenticatable::class);
+        $user->shouldReceive('getAuthIdentifierName')->andReturn('id');
+        $user->shouldReceive('getAuthIdentifier')->andReturn(99);
+
+        $filter->forUser($user);
+
+        $expectedKey = 'filter:'.md5('203.0.113.5|'.get_class($filter).'|user:99');
+
+        $limiter = m::mock(RateLimiter::class);
+        app()->instance(RateLimiter::class, $limiter);
+
+        $limiter->shouldReceive('tooManyAttempts')
+            ->once()
+            ->withArgs(function ($key, $maxAttempts, $window) use ($expectedKey) {
+                $this->assertSame($expectedKey, $key);
+                $this->assertSame(60, $maxAttempts);
+                $this->assertSame(60, $window);
+
+                return true;
+            })
+            ->andReturn(false);
+
+        $limiter->shouldReceive('hit')
+            ->once()
+            ->withArgs(function ($key, $decay) use ($expectedKey) {
+                $this->assertSame($expectedKey, $key);
+                $this->assertSame(1, $decay);
+
+                return true;
+            });
+
+        try {
+            $this->assertTrue($filter->callCheckRateLimits());
+        } finally {
+            app()->forgetInstance(RateLimiter::class);
+        }
+    }
+
+    public function test_rate_limit_configuration_can_be_overridden_per_filter(): void
+    {
+        $request = new Request;
+        $request->server->set('REMOTE_ADDR', '198.51.100.10');
+
+        $filter = new class($request) extends TestFilter
+        {
+            public function callCheckRateLimits(): bool
+            {
+                return $this->checkRateLimits();
+            }
+
+            protected function resolveRateLimitMaxAttempts(): int
+            {
+                return 5;
+            }
+
+            protected function resolveRateLimitWindowSeconds(int $complexityScore): int
+            {
+                return 120;
+            }
+
+            protected function resolveRateLimitDecaySeconds(int $complexityScore): int
+            {
+                return 90;
+            }
+        };
+
+        $expectedKey = 'filter:'.md5('198.51.100.10|'.get_class($filter));
+
+        $limiter = m::mock(RateLimiter::class);
+        app()->instance(RateLimiter::class, $limiter);
+
+        $limiter->shouldReceive('tooManyAttempts')
+            ->once()
+            ->withArgs(function ($key, $maxAttempts, $window) use ($expectedKey) {
+                $this->assertSame($expectedKey, $key);
+                $this->assertSame(5, $maxAttempts);
+                $this->assertSame(120, $window);
+
+                return true;
+            })
+            ->andReturn(false);
+
+        $limiter->shouldReceive('hit')
+            ->once()
+            ->withArgs(function ($key, $decay) use ($expectedKey) {
+                $this->assertSame($expectedKey, $key);
+                $this->assertSame(90, $decay);
+
+                return true;
+            });
+
+        try {
+            $this->assertTrue($filter->callCheckRateLimits());
+        } finally {
+            app()->forgetInstance(RateLimiter::class);
+        }
     }
 }

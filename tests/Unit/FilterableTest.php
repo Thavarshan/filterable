@@ -1,10 +1,11 @@
 <?php
 
-namespace Filterable\Tests;
+namespace Filterable\Tests\Unit;
 
 use Exception;
 use Filterable\Contracts\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
+use Filterable\Tests\TestCase;
 use Filterable\Traits\Filterable;
 use Illuminate\Database\Eloquent\Builder;
 use Mockery as m;

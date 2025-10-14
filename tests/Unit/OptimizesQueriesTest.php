@@ -1,6 +1,6 @@
 <?php
 
-namespace Filterable\Tests\Concerns;
+namespace Filterable\Tests\Unit;
 
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;

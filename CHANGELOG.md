@@ -1,6 +1,27 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.0.1...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.0...HEAD)
+
+## [v2.1.0](https://github.com/Thavarshan/filterable/compare/v2.0.1...v2.1.0) - 2025-10-14
+
+### Added
+
+- Publishable configuration defaults (`config/filterable.php`) now seed feature toggles, runtime options, and cache TTLs automatically during filter construction.
+- New lifecycle events (`FilterApplying`, `FilterApplied`, `FilterFailed`) fire around `apply()` so listeners can plug into telemetry, metrics, or alerts without overriding the base class.
+- Streaming helpers (`stream()`, `streamGenerator()`) expose LazyCollection and generator pipelines for truly memory-safe traversal.
+- Rate limiting hooks allow filters to override default attempt counts, windows, and decay values per request.
+- Added an end-to-end integration test covering filtering, caching, streaming, and lifecycle signals against the in-memory Testbench harness.
+
+### Changed
+
+- Rate limiter keys incorporate the authenticated user identifier (when provided via `forUser()`), reducing collisions across shared IPs.
+- Memory management now streams results under the hood before materialising them during `get()` when enabled.
+- Documentation refreshed to surface lifecycle events, streaming helpers, rate limiting overrides, and configuration presets.
+
+### Fixed
+
+- Prevents rate limiter collisions with richer key composition and hookable decay windows.
+- Ensures streaming helpers respect the filter lifecycle by requiring `apply()` before invocation.
 
 ## [v2.0.1](https://github.com/Thavarshan/filterable/compare/v2.0.0...v2.0.1) - 2025-05-14
 
@@ -21,7 +42,7 @@
 - References the GitHub issue number for traceability
 - Includes the exact error message for users who might be searching for a solution
 
-**Full Changelog**: https://github.com/Thavarshan/filterable/compare/2.0.0...2.0.1
+**Full Changelog**: <https://github.com/Thavarshan/filterable/compare/2.0.0...2.0.1>
 
 ## [v2.0.0](https://github.com/Thavarshan/filterable/compare/v1.2.0...v2.0.0) - 2025-05-13
 
@@ -143,7 +164,6 @@
 - **Updated development dependencies:**
   - `phpunit/phpunit` from `^9.0` to `^10.1` for advanced unit testing capabilities.
   - `vimeo/psalm` from `5.0.0` to `5.16.0` for improved static analysis and code quality checks.
-  
 
 ### Fixed
 
@@ -158,7 +178,6 @@
   - **Integration with `Psr\Log\LoggerInterface`**: Ensured flexibility in logging implementations by integrating with the standard PSR-3 logger interface. Developers can now inject any compatible logging library that adheres to this standard, facilitating customized logging strategies.
   - **Conditional Log Statements**: Added conditional logging throughout the filter application process to provide granular insights into key actions and decisions. This feature is designed to help in pinpointing issues and understanding filter behavior under various conditions.
   - **Unit Tests for Logging**: Extended the test suite to include tests verifying that logging behaves as expected under different configurations, ensuring that the new functionality is robust and reliable.
-  
 
 ### Changed
 

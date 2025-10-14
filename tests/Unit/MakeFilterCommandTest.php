@@ -1,7 +1,8 @@
 <?php
 
-namespace Filterable\Tests;
+namespace Filterable\Tests\Unit;
 
+use Filterable\Tests\TestCase;
 use Illuminate\Support\Facades\File;
 
 class MakeFilterCommandTest extends TestCase

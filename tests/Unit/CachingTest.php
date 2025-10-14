@@ -1,6 +1,6 @@
 <?php
 
-namespace Filterable\Tests\Concerns;
+namespace Filterable\Tests\Unit;
 
 use Carbon\Carbon;
 use Filterable\Tests\Fixtures\MockFilterable;

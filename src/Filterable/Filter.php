@@ -17,10 +17,14 @@ use Filterable\Concerns\SupportsFilterChaining;
 use Filterable\Concerns\TransformsFilterValues;
 use Filterable\Concerns\ValidatesFilterInput;
 use Filterable\Contracts\Filter as FilterContract;
+use Filterable\Events\FilterApplied;
+use Filterable\Events\FilterApplying;
+use Filterable\Events\FilterFailed;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
@@ -95,6 +99,8 @@ abstract class Filter implements FilterContract
         ?Cache $cache = null,
         ?LoggerInterface $logger = null
     ) {
+        $this->applyConfigurationDefaults();
+
         // Set up the dependencies
         if ($cache) {
             $this->setCacheHandler($cache);
@@ -120,6 +126,8 @@ abstract class Filter implements FilterContract
         $this->builder = $builder;
         $this->options = array_merge($this->options, $options ?? []);
         $this->state = 'applying';
+
+        Event::dispatch(new FilterApplying($this, $this->builder, $this->options));
 
         // Start performance monitoring if enabled
         if ($this->hasFeature('performance')) {
@@ -172,6 +180,8 @@ abstract class Filter implements FilterContract
 
             $this->state = 'applied';
 
+            Event::dispatch(new FilterApplied($this, $this->builder, $this->getCurrentFilters()));
+
             // Log completion of filter application if logging is enabled
             $this->logInfo('Filter application completed', [
                 'applied_filters' => $this->getCurrentFilters(),
@@ -185,6 +195,8 @@ abstract class Filter implements FilterContract
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
+            Event::dispatch(new FilterFailed($this, $this->builder, $e));
 
             // Always rethrow validation exceptions
             if ($e instanceof ValidationException) {
@@ -408,5 +420,30 @@ abstract class Filter implements FilterContract
     {
         // By default, don't rethrow the exception
         // Subclasses can override this to change behavior
+    }
+
+    /**
+     * Apply configuration-driven defaults to the filter instance.
+     */
+    protected function applyConfigurationDefaults(): void
+    {
+        $defaults = config('filterable.defaults', []);
+
+        if (isset($defaults['features']) && is_array($defaults['features'])) {
+            $featureDefaults = array_intersect_key($defaults['features'], $this->features);
+            $this->features = array_merge($this->features, $featureDefaults);
+        }
+
+        if (isset($defaults['options']) && is_array($defaults['options'])) {
+            foreach ($defaults['options'] as $key => $value) {
+                $this->options[$key] = $value;
+            }
+        }
+
+        $configuredTtl = $defaults['cache']['ttl'] ?? null;
+
+        if (is_numeric($configuredTtl)) {
+            $this->cacheExpiration = (int) $configuredTtl;
+        }
     }
 }

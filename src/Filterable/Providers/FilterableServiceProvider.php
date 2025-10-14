@@ -14,6 +14,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     public function configurePackage(Package $package): void
     {
         $package->name('jerome/filterable')
+            ->hasConfigFile('filterable')
             ->hasCommand(MakeFilterCommand::class);
     }
 }

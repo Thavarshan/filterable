@@ -1,6 +1,6 @@
 <?php
 
-namespace Filterable\Tests\Concerns;
+namespace Filterable\Tests\Unit;
 
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
@@ -223,7 +223,7 @@ class HandlesRateLimitingTest extends TestCase
         // Mock the rate limiter responses
         $this->rateLimiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->with($expectedKey, 60)
+            ->with($expectedKey, 60, 60)
             ->andReturn(false);
 
         $this->rateLimiter->shouldReceive('hit')
@@ -269,7 +269,7 @@ class HandlesRateLimitingTest extends TestCase
         // Mock the rate limiter to say too many attempts
         $this->rateLimiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->with($expectedKey, 60)
+            ->with($expectedKey, 60, 60)
             ->andReturn(true);
 
         // The hit method should not be called if too many attempts
@@ -307,6 +307,9 @@ class HandlesRateLimitingTest extends TestCase
         // Mock the rateLimiter for the filter application
         $this->rateLimiter->shouldReceive('tooManyAttempts')
             ->once()
+            ->withArgs(function ($key, $maxAttempts, $window) {
+                return is_string($key) && $maxAttempts === 60 && $window === 60;
+            })
             ->andReturn(false);
 
         $this->rateLimiter->shouldReceive('hit')

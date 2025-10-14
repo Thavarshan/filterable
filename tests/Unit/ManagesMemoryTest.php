@@ -1,6 +1,6 @@
 <?php
 
-namespace Filterable\Tests\Concerns;
+namespace Filterable\Tests\Unit;
 
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
@@ -54,16 +54,10 @@ class ManagesMemoryTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
-        $builderMock->shouldReceive('chunk')
+        $builderMock->shouldReceive('lazy')
             ->once()
-            ->with(500, m::type('Closure'))
-            ->andReturnUsing(function ($size, $callback) {
-                // Simulate chunking by calling callback with results
-                $results = MockFilterable::all()->take(5);
-                $callback($results);
-
-                return true;
-            });
+            ->with(500)
+            ->andReturn(MockFilterable::query()->lazy(500));
 
         // Create a new filter with our mock builder
         $filter = new TestFilter($this->request);
@@ -282,5 +276,51 @@ class ManagesMemoryTest extends TestCase
 
         $this->assertEquals(2, $chunkCount); // 10 records in chunks of 5
         $this->assertEquals(10, $recordCount);
+    }
+
+    public function test_stream_returns_lazy_collection_without_materialising(): void
+    {
+        $builderMock = m::mock($this->builder)->makePartial();
+        $builderMock->shouldReceive('lazy')
+            ->once()
+            ->with(4)
+            ->andReturn(MockFilterable::query()->lazy(4));
+
+        $filter = new TestFilter($this->request);
+        $filter->apply($builderMock);
+
+        $stream = $filter->stream(4);
+
+        $this->assertInstanceOf(\Illuminate\Support\LazyCollection::class, $stream);
+
+        $count = 0;
+        foreach ($stream as $item) {
+            $count++;
+        }
+
+        $this->assertEquals(10, $count);
+    }
+
+    public function test_stream_generator_yields_results_incrementally(): void
+    {
+        $builderMock = m::mock($this->builder)->makePartial();
+        $builderMock->shouldReceive('lazy')
+            ->once()
+            ->with(3)
+            ->andReturn(MockFilterable::query()->lazy(3));
+
+        $filter = new TestFilter($this->request);
+        $filter->apply($builderMock);
+
+        $generator = $filter->streamGenerator(3);
+
+        $this->assertInstanceOf(\Generator::class, $generator);
+
+        $count = 0;
+        foreach ($generator as $item) {
+            $count++;
+        }
+
+        $this->assertEquals(10, $count);
     }
 }
