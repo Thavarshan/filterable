@@ -313,7 +313,7 @@ class FilterDependencyInjectionTest extends TestCase
         $this->app->instance(Request::class, $request);
 
         // Method 1: Manual instantiation (always worked)
-        $manualFilter = new MockFilter(request());
+        $manualFilter = new MockFilter($this->app['request']);
         $manualResults = MockFilterable::query()->filter($manualFilter)->get();
 
         // Method 2: DI container resolution (was broken before fix)
