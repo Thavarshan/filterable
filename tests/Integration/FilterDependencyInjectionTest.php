@@ -55,10 +55,12 @@ class FilterDependencyInjectionTest extends TestCase
      */
     public function test_filter_resolved_from_container_receives_current_request(): void
     {
-        // Simulate a request with filter parameters
-        $this->app['request']->merge([
+        // Simulate a request with filter parameters using a fresh Request instance
+        $request = Request::create('/posts', 'GET', [
             'name' => 'John',
         ]);
+        $this->app->instance('request', $request);
+        $this->app->instance(Request::class, $request);
 
         // Resolve the filter from the DI container (as Laravel would in a controller)
         $filter = $this->app->make(MockFilter::class);
