@@ -37,7 +37,8 @@ class FilterableServiceProvider extends PackageServiceProvider
     {
         // Bind Request class to resolve to the current request from the container.
         // This ensures Filter subclasses get the active HTTP request instead of an empty one.
-        // The rebinding allows the test suite to override with $app->instance() if needed.
+        // Using bindIf() ensures we don't override any existing Request bindings.
+        // Tests can still override this by calling $app->instance(Request::class, $request).
         $this->app->bindIf(Request::class, function ($app) {
             return $app['request'];
         });
