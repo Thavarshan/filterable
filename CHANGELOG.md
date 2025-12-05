@@ -1,6 +1,22 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.0...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.1...HEAD)
+
+## [v2.1.1](https://github.com/Thavarshan/filterable/compare/v2.1.0...v2.1.1) - 2025-12-05
+
+### Added
+
+* No new features in this release; internal improvements and fixes only.
+
+### Changed
+
+* Updated `FilterDependencyInjectionTest.php` to improve coverage, including a query assertion and more consistent request setup.
+* Refined `FilterableServiceProvider.php` to use a consistent pattern when wiring filters through the container.
+* Cleaned up code style by updating docblocks and removing a redundant constructor for better maintainability.
+
+### Fixed
+
+* Ensured `Filter` instances resolved from the dependency injection container always receive the current HTTP request.
 
 ## [v2.1.0](https://github.com/Thavarshan/filterable/compare/v2.0.1...v2.1.0) - 2025-10-14
 
@@ -42,7 +58,7 @@
 - References the GitHub issue number for traceability
 - Includes the exact error message for users who might be searching for a solution
 
-**Full Changelog**: <https://github.com/Thavarshan/filterable/compare/2.0.0...2.0.1>
+**Full Changelog**: [https://github.com/Thavarshan/filterable/compare/2.0.0...2.0.1](https://github.com/Thavarshan/filterable/compare/2.0.0...2.0.1)
 
 ## [v2.0.0](https://github.com/Thavarshan/filterable/compare/v1.2.0...v2.0.0) - 2025-05-13
 
@@ -164,6 +180,7 @@
 - **Updated development dependencies:**
   - `phpunit/phpunit` from `^9.0` to `^10.1` for advanced unit testing capabilities.
   - `vimeo/psalm` from `5.0.0` to `5.16.0` for improved static analysis and code quality checks.
+  
 
 ### Fixed
 
@@ -178,6 +195,7 @@
   - **Integration with `Psr\Log\LoggerInterface`**: Ensured flexibility in logging implementations by integrating with the standard PSR-3 logger interface. Developers can now inject any compatible logging library that adheres to this standard, facilitating customized logging strategies.
   - **Conditional Log Statements**: Added conditional logging throughout the filter application process to provide granular insights into key actions and decisions. This feature is designed to help in pinpointing issues and understanding filter behavior under various conditions.
   - **Unit Tests for Logging**: Extended the test suite to include tests verifying that logging behaves as expected under different configurations, ensuring that the new functionality is robust and reliable.
+  
 
 ### Changed
 
