@@ -221,18 +221,25 @@ class FilterDependencyInjectionTest extends TestCase
         // Cache and logger should be injected when explicitly bound
         $this->assertTrue($filter->hasCacheHandler());
         $this->assertTrue($filter->hasLogger());
+
+        // Verify the filter actually works when applied
+        $results = MockFilterable::query()->filter($filter)->get();
+        $this->assertCount(2, $results); // John Doe and Bob Johnson contain 'John'
+        $this->assertTrue($results->every(fn ($r) => str_contains($r->name, 'John')));
     }
 
     public function test_multiple_filter_resolutions_use_current_request(): void
     {
-        // First request
-        $this->app['request']->merge(['name' => 'John']);
+        // First request - use $app->instance() for consistency
+        $firstRequest = Request::create('/posts', 'GET', ['name' => 'John']);
+        $this->app->instance('request', $firstRequest);
+        $this->app->instance(Request::class, $firstRequest);
         $filter1 = $this->app->make(MockFilter::class);
 
-        // Modify request (simulating a different request)
-        $newRequest = Request::create('/posts', 'GET', ['name' => 'Jane']);
-        $this->app->instance('request', $newRequest);
-        $this->app->instance(Request::class, $newRequest);
+        // Second request - same approach for consistency
+        $secondRequest = Request::create('/posts', 'GET', ['name' => 'Jane']);
+        $this->app->instance('request', $secondRequest);
+        $this->app->instance(Request::class, $secondRequest);
 
         // Second filter resolution should get the new request
         $filter2 = $this->app->make(MockFilter::class);
@@ -390,14 +397,6 @@ class StatusFilter extends Filter
 class FilterWithDependencies extends Filter
 {
     protected array $filters = ['name', 'email'];
-
-    public function __construct(
-        Request $request,
-        ?Cache $cache = null,
-        ?LoggerInterface $logger = null
-    ) {
-        parent::__construct($request, $cache, $logger);
-    }
 
     public function hasCacheHandler(): bool
     {

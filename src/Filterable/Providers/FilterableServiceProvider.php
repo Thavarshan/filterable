@@ -28,7 +28,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * Register contextual bindings for Filter classes.
+     * Register global bindings for Filter dependencies.
      *
      * This ensures that when a Filter subclass is resolved from the DI container,
      * it receives the current HTTP request instance rather than an empty Request.
