@@ -21,13 +21,13 @@ Filterable is a Laravel package for turning HTTP request parameters into rich, c
 - A configured cache store when you enable caching features
 - A PSR-3 logger when you enable logging (optional)
 
-## Installation
+## Installation & Setup
 
 ```bash
 composer require jerome/filterable
 ```
 
-Package auto-discovery registers the `FilterableServiceProvider`, which in turn exposes the `make:filter` Artisan command. Publish the configuration when you want to tweak the default feature flags or cache behaviour:
+Package auto-discovery registers the `FilterableServiceProvider`, which contextual-binds the current `Request` into resolved filters and exposes the `make:filter` Artisan command. Publish the configuration to set global feature defaults, cache behaviour, or runtime options:
 
 ```bash
 php artisan vendor:publish --tag=filterable-config
@@ -38,10 +38,11 @@ Stubs live under `src/Filterable/Console/stubs/` and can be overridden by placin
 ## Highlights
 
 - Publishable configuration (`config/filterable.php`) to set default feature bundles, runtime options, and cache TTLs that the base filter reads during construction.
-- Stateful lifecycle with `apply`, `get`, `runQuery`, `reset`, rich debug output via `getDebugInfo()`, and lifecycle events (`FilterApplying`, `FilterApplied`, `FilterFailed`).
+- Stateful lifecycle with `apply`, `get`, `runQuery`, `reset`, rich debug output via `getDebugInfo()`, lifecycle events (`FilterApplying`, `FilterApplied`, `FilterFailed`), and configurable exception handling.
 - Opt-in concerns for validation, permissions, rate limiting, caching (with heuristics), logging, performance metrics, query optimisation, memory management, value transformation, and fluent filter chaining.
 - Drop-in `Filterable` Eloquent scope trait so any model can accept a filter instance.
 - Smart caching that builds deterministic cache keys, supports tags, memoises counts, and can decide automatically when to cache complex queries.
+- Contextual binding in `FilterableServiceProvider` makes sure container-resolved filters receive the current HTTP `Request`; injecting a cache repository or PSR-3 logger auto-enables the relevant features.
 - Memory-friendly helpers (`lazy`, `stream`, `streamGenerator`, `lazyEach`, `cursor`, `chunk`, `map`, `filter`, `reduce`) when the `memoryManagement` feature is enabled.
 - First-party Artisan generator with `--basic`, `--model`, and `--force` options to rapidly scaffold filters.
 
@@ -182,124 +183,149 @@ class PostController
 
 `apply()` may only be called once per instance; call `reset()` if you need to reuse a filter. Because the `Filter` base class uses Laravel's `Conditionable` trait, you can use helpers such as `$filter->when($request->boolean('validate'), fn ($filter) => $filter->enableFeature('validation'));`.
 
-## Lifecycle & Runtime API
+## Lifecycle & Core API
 
-- `apply(Builder $builder, ?array $options = [])` – binds the filter to a query, merges options, runs enabled concerns, and transitions the state from `initialized` to `applied`. Re-applying without `reset()` raises a `RuntimeException`.
-- `get()` – returns an `Illuminate\Support\Collection` of results, delegating to caching or memory-management helpers when their features are active.
-- `runQuery(Builder $builder, ?array $options = [])` – convenience wrapper for `apply()` followed by `get()`.
-- `count()` – respects smart caching, including tagged caches and memoised counts when enabled.
-- `lazy()`, `stream()`, `streamGenerator()`, `lazyEach()`, `cursor()`, `chunk()`, `map()`, `filter()`, `reduce()` – memory-safe helpers activated by the `memoryManagement` feature.
-- `enableFeature()`, `enableFeatures()`, `disableFeature()`, `hasFeature()` – toggle optional concerns per instance.
-- `setOption()`, `setOptions()` – persist runtime flags (for example `chunk_size`, `use_chunking`) that concerns such as `OptimizesQueries` and `ManagesMemory` consume.
-- `setValidationRules()`, `addValidationRule()`, `setValidationMessages()` – configure input validation when `validation` is enabled.
-- `setFilterPermissions()` and `userHasPermission()` – declare permissions required for filters; override `userHasPermission()` to integrate with your auth layer.
-- `setMaxFilters()`, `setMaxComplexity()`, `setFilterComplexity()` – configure rate limiting when the `rateLimit` feature is active.
-- `registerPreFilters()`, `appendFilterable()`, `registerTransformer()` – hook in global constraints, programmatic filters, and value normalisers.
-- `forUser()` – scope the query to an authenticated user; the user identifier becomes part of the cache key automatically.
-- `cacheTags()`, `cacheResults()`, `cacheCount()`, `clearCache()`, `clearRelatedCaches()` – advanced caching controls layered on top of `InteractsWithCache` and `SmartCaching`.
-- `setCacheExpiration()` – adjust the cache TTL (default is 5 minutes).
-- `setLogger()` / `getLogger()` – swap the PSR-3 logger used by the logging concern.
-- `addMetric()`, `getMetrics()`, `getExecutionTime()` – capture and retrieve custom performance telemetry.
-- `getDebugInfo()` – inspect the current state, applied filters, enabled features, options, SQL, bindings, and metrics; invaluable for testing and observability.
-- Laravel events `FilterApplying`, `FilterApplied`, and `FilterFailed` fire automatically around `apply()` to integrate with listeners, jobs, or telemetry pipelines.
-- `reset()` – return the filter to the `initialized` state so it can be applied again.
+- `apply(Builder $builder, ?array $options = [])` binds the filter to a query, merges options, runs enabled concerns, and transitions the state from `initialized` → `applying` → `applied`. Re-applying without `reset()` raises a `RuntimeException`.
+- `get()` returns an `Illuminate\Support\Collection` of results, delegating to caching or memory-managed helpers when those features are active. `runQuery()` is a convenience wrapper for `apply()` + `get()`.
+- `count()` respects smart caching (including tagged caches and memoised counts when enabled). `toSql()` exposes the raw SQL for debugging.
+- `enableFeature()`, `enableFeatures()`, `disableFeature()`, `hasFeature()` toggle concerns per instance; defaults may be set in `config/filterable.php` and are applied in the constructor.
+- `setOption()`, `setOptions()` persist runtime flags (for example `chunk_size`, `use_chunking`) that concerns such as `OptimizesQueries` and `ManagesMemory` consume.
+- `reset()` returns the filter to the `initialized` state so it can be applied again. `getDebugInfo()` surfaces state, filters applied, options, SQL/bindings, and metrics.
 
-## Feature Toggle Reference
+## Feature Guides & API
 
-Injecting a cache repository or logger into the filter constructor automatically enables the `caching` and `logging` features; everything else defaults to `false` until you opt in.
+### Validation & Value Transformation
 
-| Feature key | Concern | Enable via | Highlights |
-| --- | --- | --- | --- |
-| `validation` | `ValidatesFilterInput` | `enableFeature('validation')` | Validates active filter values with Laravel's validator before they run. |
-| `permissions` | `HandlesFilterPermissions` | `enableFeature('permissions')` + `setFilterPermissions()` | Drops disallowed filters by consulting `userHasPermission()`. |
-| `rateLimit` | `HandlesRateLimiting` | `enableFeature('rateLimit')` | Calculates request complexity, enforces max filters, and throttles via `RateLimiter`. |
-| `caching` | `InteractsWithCache` / `SmartCaching` | Inject cache or call `enableFeature('caching')` | Deterministic cache keys, heuristic caching for complex queries, optional tags, result/count memoisation, manual invalidation helpers. |
-| `logging` | `InteractsWithLogging` | Inject logger or call `enableFeature('logging')` | Structured info/debug/warning logs throughout the lifecycle. |
-| `performance` | `MonitorsPerformance` | `enableFeature('performance')` | Records execution time, memory usage, filter count, and custom metrics. |
-| `optimization` | `OptimizesQueries` | `enableFeature('optimization')` | Applies `select()`, `with()`, index hints, and chunk settings before filters run. |
-| `memoryManagement` | `ManagesMemory` | `enableFeature('memoryManagement')` | Exposes streaming helpers for large result sets. |
-| `filterChaining` | `SupportsFilterChaining` | `enableFeature('filterChaining')` | Queue additional fluent `where*` clauses after request-driven filters. |
-| `valueTransformation` | `TransformsFilterValues` | `enableFeature('valueTransformation')` | Normalise inputs (casting, parsing) before filter methods execute. |
+- Enable with `enableFeature('validation')` and configure with `setValidationRules()`, `addValidationRule()`, and `setValidationMessages()`. Only active filters are validated and `ValidationException` is rethrown.
+- Enable `valueTransformation` to normalise inputs before filter methods execute. Register per-key transformers with `registerTransformer()` or bulk-array transforms with `transformArray()`.
 
-## Concern Details
+```php
+$filter->enableFeatures(['validation', 'valueTransformation'])
+    ->setValidationRules([
+        'status' => ['nullable', Rule::in(['draft', 'published'])],
+        'tags' => ['array'],
+    ])
+    ->registerTransformer('tags', fn ($value) => array_map('intval', (array) $value));
+```
 
-### HandlesFilterables (core)
+### Permissions & User Scope
 
-Discovers eligible request keys from the `$filters` array and optional `$filterMethodMap`, normalises them, and invokes matching methods (camel-cased by default). Use `getFilterables()`, `getCurrentFilters()`, and `appendFilterable()` to inspect or modify the values, and `asCollectionFilter()` to reuse the filter list in collection pipelines.
+- `forUser($user)` scopes queries to the authenticated identifier and folds that identifier into cache keys automatically.
+- Enable `permissions` and declare requirements with `setFilterPermissions()`. Override `userHasPermission()` in your filter to plug into your authorisation layer; disallowed filters are dropped (and optionally logged) before execution.
 
-### HandlesPreFilters (core)
+```php
+$filter->enableFeature('permissions')
+    ->forUser($request->user())
+    ->setFilterPermissions(['email' => 'view-sensitive-fields']);
+```
 
-Register closures with `registerPreFilters()` to apply global constraints (such as soft deletes or visibility flags) before request-driven filters execute. Logging hooks fire automatically when `logging` is enabled.
+### Rate Limiting
 
-### HandlesUserScope (core)
+- Enable with `enableFeature('rateLimit')`. Defaults allow 10 filters, a complexity budget of 100, and 60 attempts within a 60-second window; decay is `ceil(complexity/10)` seconds.
+- Tune guardrails with `setMaxFilters()`, `setMaxComplexity()`, and `setFilterComplexity()` (array-valued filters multiply complexity). Override `resolveRateLimitMaxAttempts()`, `resolveRateLimitWindowSeconds()`, or `resolveRateLimitDecaySeconds()` for finer control.
 
-Call `forUser($user)` to scope the query to the authenticated user's identifier. The identifier is embedded in cache keys to keep cached results user-specific.
+```php
+$filter->enableFeature('rateLimit')
+    ->setMaxFilters(5)
+    ->setMaxComplexity(25)
+    ->setFilterComplexity(['tags' => 3, 'q' => 2]);
+```
 
-### HandlesFilterPermissions (`permissions`)
+### Caching & SmartCaching
 
-Map filters to required abilities with `setFilterPermissions()`. Override `userHasPermission()` to integrate with your authorisation logic; disallowed filters are removed silently (and optionally logged).
+- Inject an `Illuminate\Contracts\Cache\Repository` or call `enableFeature('caching')` to activate caching. TTL defaults to 5 minutes or `config('filterable.defaults.cache.ttl')`; override per instance with `setCacheExpiration()`.
+- Opt into result or count caching via `cacheResults()` / `cacheCount()`, and scope invalidation with `cacheTags()`, `clearCache()`, and `clearRelatedCaches()`. Cache keys include sanitised filter values and optional user identifiers from `forUser()`.
+- `SmartCaching` will automatically cache more complex queries (multiple where clauses, joins, select statements) when `caching` is enabled, while skipping trivial single-clause lookups.
 
-### HandlesRateLimiting (`rateLimit`)
+```php
+$filter->enableFeature('caching')
+    ->cacheTags(['posts'])
+    ->cacheResults()
+    ->cacheCount()
+    ->setCacheExpiration(15);
 
-Protect your data layer by limiting both the number of filters and an overall complexity score. Configure limits via `setMaxFilters()`, `setMaxComplexity()`, and `setFilterComplexity()`. The trait throttles offending requests using Laravel's `RateLimiter`, automatically scoping the key by request IP, filter class, and (when available) the user identifier set via `forUser()`. Override the hookable methods `resolveRateLimitMaxAttempts()`, `resolveRateLimitWindowSeconds()`, and `resolveRateLimitDecaySeconds()` to tailor attempt counts or decay windows per filter.
+$posts = Post::query()->filter($filter)->get();
+$total = $filter->count();
+```
 
-### InteractsWithCache & SmartCaching (`caching`)
+### Logging & Performance Metrics
 
-Manage deterministic cache keys that include sanitised filter values and optional user identifiers. Adjust TTL with `setCacheExpiration()` (defaults to 5 minutes). Enable cache tags via `cacheTags()`, flag results or counts for caching with `cacheResults()` / `cacheCount()`, and invalidate with `clearCache()` or `clearRelatedCaches()`. `SmartCaching` inspects the underlying query (joins, multiple clauses, select statements) to decide when to cache automatically.
+- Inject a PSR-3 logger or call `setLogger()` + `enableFeature('logging')` to emit structured lifecycle logs. Hooks such as `applyFilterable` and cache-building log automatically when logging is active.
+- Enable `performance` to measure execution time, memory usage, and filter count; extend with `addMetric()` and read via `getMetrics()` / `getExecutionTime()`.
 
-### InteractsWithLogging (`logging`)
+### Query Optimisation & Filter Chaining
 
-Inject a PSR-3 logger (or rely on container resolution) and use `logInfo()`, `logDebug()`, and `logWarning()` to emit structured events. The base filter logs lifecycle milestones and failures when the feature is active.
+- Enable `optimization` to apply `select()`, `with()`, and `chunkSize()` before filters run; `useIndex()` can hint MySQL indexes when appropriate.
+- Enable `filterChaining` to queue fluent additions after request-driven filters: `where()`, `whereIn()`, `whereNotIn()`, `whereBetween()`, and `orderBy()` are supported.
 
-### MonitorsPerformance (`performance`)
+```php
+$filter->enableFeatures(['optimization', 'filterChaining'])
+    ->select(['id', 'title', 'status'])
+    ->with(['author', 'tags'])
+    ->chunkSize(500)
+    ->where('status', 'published')
+    ->orderBy('published_at', 'desc');
+```
 
-Wraps filter execution with timing hooks. `startTiming()` and `endTiming()` capture execution duration, memory usage, and filter counts. Extend with `addMetric()` to ship domain-specific telemetry.
+### Memory Management
 
-### OptimizesQueries (`optimization`)
+- Enable `memoryManagement` for streaming helpers that avoid loading whole result sets into memory: `lazy()`, `lazyEach()`, `cursor()`, `stream()`, `streamGenerator()`, `chunk()`, `map()`, `filter()`, `reduce()`.
+- `executeQueryWithMemoryManagement()` underpins `get()` when `chunk_size` is set; `resolveChunkSize()` honours `chunk_size` options or provided arguments. Call `apply()` before streaming helpers; misuse raises a `RuntimeException`.
 
-Call `select()`, `with()`, `chunkSize()`, and `useIndex()` ahead of filter execution. Options persist on the filter and are honoured by downstream helpers such as `get()`, `lazy()`, and `chunk()`.
+```php
+$filter->enableFeature('memoryManagement')
+    ->setOption('chunk_size', 250);
 
-### ManagesMemory (`memoryManagement`)
+$filter->apply(Post::query());
+$filter->lazyEach(fn ($post) => /* ... */, 250);
+```
 
-Expose lazy, chunked, and streaming traversal of the query. Use `lazy()`, `stream()`, `streamGenerator()`, `lazyEach()`, `cursor()`, `chunk()`, `map()`, `filter()`, and `reduce()` to process large datasets without exhausting memory. `executeQueryWithMemoryManagement()` now streams results under the hood before materialising them, so even `get()` stays efficient when the feature is enabled.
+### Pre-Filters & Manual Filters
 
-### SupportsFilterChaining (`filterChaining`)
+- Register global constraints with `registerPreFilters()`; they run before request-driven filters and are logged when logging is enabled.
+- Add programmatic filter values with `appendFilterable()`, or alias request keys to method names via `protected array $filterMethodMap` on your filter class. `asCollectionFilter()` returns a callable compatible with collection pipelines when you want to reuse filterables outside of Eloquent.
 
-Queue ad-hoc fluent constraints after the request-driven filters with helpers like `where()`, `whereIn()`, `whereNotIn()`, `whereBetween()`, and `orderBy()`. Custom filters execute once the main pipeline completes.
+### Debugging & Events
 
-### TransformsFilterValues (`valueTransformation`)
-
-Normalise request data before filters run. Register closures per key with `registerTransformer()`, or use `transformArray()` to mutate lists in bulk—ideal for casting enums, parsing date ranges, or splitting CSV inputs.
-
-### ValidatesFilterInput (`validation`)
-
-Attach Laravel validation rules and custom messages with `setValidationRules()` and `setValidationMessages()`. Only the active filters are validated, and `ValidationException` bubbles up to the caller if inputs are invalid.
+- `getDebugInfo()` returns state, enabled features, options, SQL, bindings, and (when `performance` is enabled) metrics. Override `handleFilteringException()` to decide whether to swallow or rethrow non-validation errors.
+- Listen for `FilterApplying`, `FilterApplied`, and `FilterFailed` events around `apply()` to hook telemetry, notifications, or side effects.
 
 ## Configuration
 
-Filterable ships with a publishable configuration file that controls default feature flags, runtime options, and cache behaviour.
+The publishable `config/filterable.php` controls defaults applied during filter construction:
 
-```bash
-php artisan vendor:publish --tag=filterable-config
+```php
+return [
+    'defaults' => [
+        'features' => [
+            'validation' => false,
+            'permissions' => false,
+            'rateLimit' => false,
+            'caching' => false,
+            'logging' => false,
+            'performance' => false,
+            'optimization' => false,
+            'memoryManagement' => false,
+            'filterChaining' => false,
+            'valueTransformation' => false,
+        ],
+        'options' => [/* runtime options seeded here */],
+        'cache' => ['ttl' => null],
+    ],
+];
 ```
 
-The generated `config/filterable.php` lets you:
-
-- Enable or disable features globally (`defaults.features.validation`, etc.).
-- Pre-populate runtime options consumed by `setOption()`/`setOptions()`.
-- Override the default cache TTL applied by `InteractsWithCache`.
-
-Per-filter overrides always win—call `enableFeature()`, `disableFeature()`, or `setCacheExpiration()` inside individual filters when you need different defaults.
+Per-filter overrides always win—call `enableFeature()`, `disableFeature()`, `setOption()`, or `setCacheExpiration()` inside individual filters when you need different defaults.
 
 ## Artisan Generator & Stubs
 
 `php artisan make:filter` scaffolds a filter class under `App\Filters` by default:
 
-- `--basic` – emit a minimal filter without feature toggles.
-- `--model=User` – import the model and prefill a typed constructor parameter.
-- `--force` – overwrite existing files.
+- `--basic` emits a minimal filter without feature toggles.
+- `--model=User` imports the model and pre-fills a typed constructor parameter.
+- `--force` overwrites an existing class.
 
-Publish customised stubs by copying the files from `src/Filterable/Console/stubs/` into your application's `stubs/` directory; the command prefers application stubs when present.
+Publish customised stubs by copying `src/Filterable/Console/stubs/` into your application's `stubs/` directory; the command prefers application stubs when present.
 
 ## Tooling & Scripts
 
@@ -325,12 +351,6 @@ Run targeted subsets with:
 ```
 
 Add new integration doubles under `tests/Fixtures/` to stay aligned with the existing autoloading.
-
-## Debugging & Observability
-
-Use `getDebugInfo()` to inspect the filter state, active features, options, SQL, bindings, and (when enabled) performance metrics—handy for log enrichment or admin APIs. Combine with the logging concern for structured lifecycle output, and with `addMetric()` to surface domain-specific counters. Caching helpers expose `clearCache()` and `clearRelatedCaches()` for cache busting hooks (model events, queue jobs, etc.).
-
-Listen for the `FilterApplying`, `FilterApplied`, and `FilterFailed` events to trigger downstream telemetry, notifications, or side effects whenever a filter runs.
 
 ## Frontend Usage
 
