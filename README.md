@@ -17,7 +17,7 @@ Filterable is a Laravel package for turning HTTP request parameters into rich, c
 ## Requirements
 
 - PHP 8.3 or 8.4
-- Laravel 11.x or 12.x components (`illuminate/cache`, `illuminate/database`, `illuminate/http`, `illuminate/support`)
+- Laravel 11.x, 12.x, or 13.x components (`illuminate/cache`, `illuminate/database`, `illuminate/http`, `illuminate/support`)
 - A configured cache store when you enable caching features
 - A PSR-3 logger when you enable logging (optional)
 
