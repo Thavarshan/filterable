@@ -24,6 +24,9 @@ jobs:
           extensions: json, dom, curl, libxml, mbstring
           coverage: none
 
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction
+
       - name: Run lint
         run: composer lint
 
