@@ -9,6 +9,9 @@
 ### Changed
 
 - Updated CI test matrix to include Laravel 13.x with Orchestra Testbench 11.x.
+- Expanded PHP support to include PHP 8.5 and added PHP 8.5 coverage in the CI test matrix.
+- Raised `spatie/laravel-package-tools` minimum to `^1.93` to guarantee Illuminate 13 compatibility.
+- Broadened dev `orchestra/testbench` support to `9.*|10.*|11.*` to match the CI matrix for Laravel 11/12/13.
 
 ## [v2.1.1](https://github.com/Thavarshan/filterable/compare/v2.1.0...v2.1.1) - 2025-12-05
 
