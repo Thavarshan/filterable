@@ -2,6 +2,14 @@
 
 ## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.1...HEAD)
 
+### Added
+
+- Added support for Laravel 13.x components.
+
+### Changed
+
+- Updated CI test matrix to include Laravel 13.x with Orchestra Testbench 11.x.
+
 ## [v2.1.1](https://github.com/Thavarshan/filterable/compare/v2.1.0...v2.1.1) - 2025-12-05
 
 ### Added

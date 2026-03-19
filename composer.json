@@ -33,24 +33,24 @@
     },
     "require": {
         "php": "^8.3 | ^8.4",
-        "illuminate/cache": "^11.0|^12.0",
-        "illuminate/contracts": "^11.0|^12.0",
-        "illuminate/database": "^11.0|^12.0",
-        "illuminate/http": "^11.0|^12.0",
-        "illuminate/support": "^11.0|^12.0",
+        "illuminate/cache": "^11.0|^12.0|^13.0",
+        "illuminate/contracts": "^11.0|^12.0|^13.0",
+        "illuminate/database": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0",
         "nesbot/carbon": "^2.72|^3.0",
         "spatie/laravel-package-tools": "^1.11"
     },
     "require-dev": {
         "ext-json": "*",
-        "laravel/pint": "^1.21",
         "larastan/larastan": "^3.1",
+        "laravel/pint": "^1.21",
         "mockery/mockery": "^1.4",
         "nunomaduro/phpinsights": "^2.11",
-        "orchestra/testbench": "10.*",
+        "orchestra/testbench": "10.*|11.*",
         "phpunit/phpunit": "^11.5.3",
-        "tightenco/duster": "^3.1",
-        "squizlabs/php_codesniffer": "^3.7"
+        "squizlabs/php_codesniffer": "^3.7",
+        "tightenco/duster": "^3.1"
     },
     "scripts": {
         "lint": "chmod +x bin/lint.sh && ./bin/lint.sh",
