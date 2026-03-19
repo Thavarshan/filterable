@@ -1,6 +1,19 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.1...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.2...HEAD)
+
+### Added
+
+- Added support for Laravel 13.x components.
+
+### Changed
+
+- Updated CI test matrix to include Laravel 13.x with Orchestra Testbench 11.x.
+- Expanded PHP support to include PHP 8.5 and added PHP 8.5 coverage in the CI test matrix.
+- Raised `spatie/laravel-package-tools` minimum to `^1.93` to guarantee Illuminate 13 compatibility.
+- Broadened dev `orchestra/testbench` support to `9.*|10.*|11.*` to match the CI matrix for Laravel 11/12/13.
+
+## [v2.1.2](https://github.com/Thavarshan/filterable/compare/v2.1.1...v2.1.2) - 2026-03-19
 
 ### Added
 
@@ -191,7 +204,7 @@
 - **Updated development dependencies:**
   - `phpunit/phpunit` from `^9.0` to `^10.1` for advanced unit testing capabilities.
   - `vimeo/psalm` from `5.0.0` to `5.16.0` for improved static analysis and code quality checks.
-
+  
 
 ### Fixed
 
@@ -206,7 +219,7 @@
   - **Integration with `Psr\Log\LoggerInterface`**: Ensured flexibility in logging implementations by integrating with the standard PSR-3 logger interface. Developers can now inject any compatible logging library that adheres to this standard, facilitating customized logging strategies.
   - **Conditional Log Statements**: Added conditional logging throughout the filter application process to provide granular insights into key actions and decisions. This feature is designed to help in pinpointing issues and understanding filter behavior under various conditions.
   - **Unit Tests for Logging**: Extended the test suite to include tests verifying that logging behaves as expected under different configurations, ensuring that the new functionality is robust and reliable.
-
+  
 
 ### Changed
 
