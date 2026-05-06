@@ -68,6 +68,20 @@ class CachingTest extends TestCase
         $this->assertCount(1, $results);
     }
 
+    public function test_cache_dependency_does_not_enable_caching_when_disabled_by_configuration(): void
+    {
+        $this->cache->shouldNotReceive('remember');
+
+        $filter = new TestFilter($this->request, $this->cache);
+
+        $this->assertFalse($filter->hasFeature('caching'));
+
+        $filter->apply($this->builder);
+        $results = $filter->get();
+
+        $this->assertInstanceOf(Collection::class, $results);
+    }
+
     public function test_builds_appropriate_cache_key(): void
     {
         $requestWithParams = Request::create('/?name=John&status=active', 'GET');

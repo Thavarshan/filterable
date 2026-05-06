@@ -104,7 +104,6 @@ abstract class Filter implements FilterContract
         // Set up the dependencies
         if ($cache) {
             $this->setCacheHandler($cache);
-            $this->enableFeature('caching');
         }
 
         if ($logger) {

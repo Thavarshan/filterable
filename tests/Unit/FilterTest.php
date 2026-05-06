@@ -204,15 +204,17 @@ class FilterTest extends TestCase
         $filter->apply($this->builder);
     }
 
-    public function test_enables_features_by_constructor_dependencies(): void
+    public function test_constructor_cache_dependency_respects_feature_defaults(): void
     {
         $this->cache->shouldReceive('remember')->andReturn(collect());
 
         // Create filter with cache and logger
         $filter = new TestFilter($this->request, $this->cache, $this->logger);
 
-        // Verify features were enabled
-        $this->assertTrue($filter->hasFeature('caching'));
+        // Cache should remain disabled unless explicitly enabled in configuration or code
+        $this->assertFalse($filter->hasFeature('caching'));
+
+        // Logger injection still enables logging for compatibility with existing behavior
         $this->assertTrue($filter->hasFeature('logging'));
     }
 
@@ -241,6 +243,7 @@ class FilterTest extends TestCase
 
         // Create filter with cache
         $filter = new TestFilter($this->request, $this->cache);
+        $filter->enableFeature('caching');
 
         // Verify caching is enabled
         $this->assertTrue($filter->hasFeature('caching'));
