@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use Filterable\Attributes\AsFilter;
+use Filterable\Filter;
+
+class {{ class }} extends Filter
+{
+    #[AsFilter('name')]
+    protected function name(string $value): void
+    {
+        $this->getBuilder()->where('name', $value);
+    }
+}

@@ -140,19 +140,18 @@ abstract class Filter implements FilterContract
         // Log start of filter application if logging is enabled
         if ($this->hasFeature('logging')) {
             $this->logInfo('Beginning filter application', [
-                'filters' => $this->getFilterables(),
                 'options' => $this->options,
             ]);
         }
 
         try {
             // Security checks (only if the features are enabled)
-            if ($this->hasFeature('validation')) {
-                $this->validateFilterInputs();
-            }
-
             if ($this->hasFeature('permissions')) {
                 $this->checkFilterPermissions();
+            }
+
+            if ($this->hasFeature('validation')) {
+                $this->validateFilterInputs();
             }
 
             // Apply value transformations if enabled

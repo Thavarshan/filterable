@@ -1,0 +1,16 @@
+<?php
+
+namespace {{ namespace }};
+
+use Filterable\Attributes\AsFilter;
+use Filterable\Attributes\TransformWith;
+use Filterable\Filter;
+
+class {{ class }} extends Filter
+{
+    #[AsFilter('name'), TransformWith(strtoupper(...))]
+    protected function name(string $value): void
+    {
+        $this->getBuilder()->where('name', $value);
+    }
+}
