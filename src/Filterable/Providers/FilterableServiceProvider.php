@@ -3,7 +3,9 @@
 namespace Filterable\Providers;
 
 use Filterable\Console\MakeFilterCommand;
+use Filterable\Definitions\ModelFilterResolver;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -28,6 +30,14 @@ class FilterableServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->registerFilterBindings();
+    }
+
+    #[\Override]
+    public function packageBooted(): void
+    {
+        if (! Builder::hasGlobalMacro('filter')) {
+            Builder::macro('filter', ModelFilterResolver::macro());
+        }
     }
 
     /**
