@@ -6,6 +6,7 @@ use Closure;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Mockery;
 use Psr\Log\LoggerInterface;
@@ -13,10 +14,13 @@ use ReflectionProperty;
 
 class HandlesPreFiltersTest extends TestCase
 {
+    /** @var Request */
     protected $request;
 
+    /** @var MockFilterable */
     protected $model;
 
+    /** @var Builder<MockFilterable> */
     protected $builder;
 
     protected function setUp(): void
@@ -56,7 +60,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter = new TestFilter($this->request);
 
         // Register a pre-filter
-        $result = $filter->registerPreFilters(function ($query) {
+        $result = $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -68,7 +72,7 @@ class HandlesPreFiltersTest extends TestCase
         $reflection->setAccessible(true);
         $preFilters = $reflection->getValue($filter);
 
-        $this->assertInstanceOf(Closure::class, $preFilters);
+        $this->assertRuntimeInstanceOf(Closure::class, $preFilters);
     }
 
     public function test_applies_pre_filters_before_regular_filters(): void
@@ -82,7 +86,8 @@ class HandlesPreFiltersTest extends TestCase
             protected array $filters = ['status'];
 
             // Track method calls to verify order
-            public $calls = [];
+            /** @var list<string> */
+            public array $calls = [];
 
             protected function applyPreFilters(): void
             {
@@ -96,14 +101,14 @@ class HandlesPreFiltersTest extends TestCase
                 parent::applyFilterables();
             }
 
-            protected function status($value): void
+            protected function status(string $value): void
             {
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
         };
 
         // Register a pre-filter
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -114,11 +119,11 @@ class HandlesPreFiltersTest extends TestCase
         $this->assertEquals(['applyPreFilters', 'applyFilterables'], $filter->calls);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify only one result matches (John Doe - active and visible)
         $this->assertCount(1, $results);
-        $this->assertEquals('John Doe', $results->first()->name);
+        $this->assertEquals('John Doe', $results->firstOrFail()->getAttribute('name'));
     }
 
     public function test_filters_query_with_pre_filters(): void
@@ -130,7 +135,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter = new TestFilter($this->request);
 
         // Register a pre-filter that only shows visible records
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -138,12 +143,12 @@ class HandlesPreFiltersTest extends TestCase
         $filter->apply($this->builder);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify only visible records are returned
         $this->assertCount($visibleCount, $results);
         foreach ($results as $result) {
-            $this->assertTrue((bool) $result->is_visible);
+            $this->assertTrue((bool) $result->getAttribute('is_visible'));
         }
     }
 
@@ -161,7 +166,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter->disableFeature('logging');
 
         // Register a pre-filter
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -192,7 +197,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter->enableFeature('logging');
 
         // Register a pre-filter
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -205,7 +210,7 @@ class HandlesPreFiltersTest extends TestCase
         // Create a filter with a spy to track method calls
         $filter = new class($this->request) extends TestFilter
         {
-            public $preFiltersCalled = false;
+            public bool $preFiltersCalled = false;
 
             protected function applyPreFilters(): void
             {
@@ -221,7 +226,7 @@ class HandlesPreFiltersTest extends TestCase
         $this->assertTrue($filter->preFiltersCalled);
 
         // But no actual filtering should have happened
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
         $this->assertCount(3, $results); // All records should be returned
     }
 
@@ -235,14 +240,14 @@ class HandlesPreFiltersTest extends TestCase
         {
             protected array $filters = ['name'];
 
-            protected function name($value): void
+            protected function name(string $value): void
             {
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
         };
 
         // Register a pre-filter
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('status', 'active');
         });
 
@@ -250,12 +255,12 @@ class HandlesPreFiltersTest extends TestCase
         $filter->apply($this->builder);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify only one result matches (John Doe - has 'Doe' in name and is active)
         $this->assertCount(1, $results);
-        $this->assertEquals('John Doe', $results->first()->name);
-        $this->assertEquals('active', $results->first()->status);
+        $this->assertEquals('John Doe', $results->firstOrFail()->getAttribute('name'));
+        $this->assertEquals('active', $results->firstOrFail()->getAttribute('status'));
     }
 
     public function test_uses_complex_pre_filters(): void
@@ -264,7 +269,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter = new TestFilter($this->request);
 
         // Register a complex pre-filter with multiple conditions
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where(function ($q) {
                 $q->where('status', 'active')
                     ->orWhere('name', 'LIKE', '%Jane%');
@@ -275,7 +280,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter->apply($this->builder);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify results (should be John and Jane, not Hidden User)
         $this->assertCount(2, $results);
@@ -314,7 +319,7 @@ class HandlesPreFiltersTest extends TestCase
         };
 
         // Register a pre-filter
-        $filter->registerPreFilters(function ($query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 

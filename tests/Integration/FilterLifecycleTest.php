@@ -5,6 +5,8 @@ namespace Filterable\Tests\Integration;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class FilterLifecycleTest extends TestCase
@@ -36,7 +38,7 @@ class FilterLifecycleTest extends TestCase
         ]);
         config()->set('filterable.defaults.cache.ttl', 30);
 
-        $request = new \Illuminate\Http\Request(['status' => 'active']);
+        $request = new Request(['status' => 'active']);
 
         $filter = new class($request, Cache::store('array')) extends TestFilter
         {
@@ -44,7 +46,7 @@ class FilterLifecycleTest extends TestCase
 
             protected function status(string $value): void
             {
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
         };
 
@@ -79,18 +81,20 @@ class FilterLifecycleTest extends TestCase
         $this->assertTrue(Cache::has($cacheKey));
 
         $cachedResults = Cache::get($cacheKey);
+        $this->assertIsIterable($cachedResults);
         $this->assertCount(1, $cachedResults);
 
         $debug = $filter->getDebugInfo();
+        $this->assertIsArray($debug['features_enabled']);
         $this->assertSame('applied', $debug['state']);
         $this->assertArrayHasKey('performance', $debug['features_enabled']);
         $this->assertArrayHasKey('filters_applied', $debug);
         $this->assertArrayHasKey('sql', $debug);
     }
 
-    protected function createMockUser(int $id)
+    protected function createMockUser(int $id): Authenticatable
     {
-        $user = new class($id) implements \Illuminate\Contracts\Auth\Authenticatable
+        $user = new class($id) implements Authenticatable
         {
             public function __construct(public int $identifier) {}
 

@@ -3,6 +3,7 @@
 namespace Filterable\Concerns;
 
 use Carbon\Carbon;
+use Illuminate\Cache\TaggedCache;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +30,7 @@ trait SmartCaching
     /**
      * Set cache tags to use for better invalidation.
      */
+    /** @param list<string>|string $tags */
     public function cacheTags(array|string $tags): self
     {
         if (is_string($tags)) {
@@ -65,7 +67,7 @@ trait SmartCaching
      */
     public function toSql(): string
     {
-        return $this->getBuilder()->toSql();
+        return $this->resolveBuilder()->toSql();
     }
 
     /**
@@ -73,10 +75,9 @@ trait SmartCaching
      */
     public function count(): int
     {
-        if (! method_exists($this, 'hasFeature') ||
-            ! $this->hasFeature('caching') ||
-            ! $this->shouldCacheCount) {
-            return $this->getBuilder()->count();
+        if (! $this->hasFeature('caching') ||
+            ! $this->shouldCacheCount || $this->getCacheExpiration() === 0) {
+            return $this->resolveBuilder()->count();
         }
 
         $cache = $this->getTaggedCache();
@@ -86,7 +87,7 @@ trait SmartCaching
             $cacheKey,
             Carbon::now()->addMinutes($this->getCacheExpiration()),
             function (): int {
-                return $this->getBuilder()->count();
+                return $this->resolveBuilder()->count();
             }
         );
     }
@@ -102,7 +103,7 @@ trait SmartCaching
 
         $taggedCache = $this->getTaggedCache();
 
-        if (method_exists($taggedCache, 'flush')) {
+        if ($taggedCache instanceof TaggedCache) {
             $taggedCache->flush();
         }
     }
@@ -114,7 +115,7 @@ trait SmartCaching
     {
         $cache = $this->getCacheHandler();
 
-        if (method_exists($cache, 'tags') && ! empty($this->cacheTags)) {
+        if (method_exists($cache, 'supportsTags') && $cache->supportsTags() && ! empty($this->cacheTags)) {
             return $cache->tags($this->cacheTags);
         }
 
@@ -128,12 +129,12 @@ trait SmartCaching
     {
         // Skip caching for very simple queries that are fast anyway
         $simpleOperations = ['=', '>', '<', '>=', '<='];
-        $queryWheres = $this->getBuilder()->getQuery()->wheres ?? [];
+        $queryWheres = $this->resolveBuilder()->getQuery()->wheres;
 
         // If there's only one simple where clause, don't bother caching
         if (count($queryWheres) <= 1) {
             foreach ($queryWheres as $where) {
-                if (isset($where['operator']) && in_array($where['operator'], $simpleOperations)) {
+                if (is_array($where) && isset($where['operator']) && in_array($where['operator'], $simpleOperations)) {
                     return false;
                 }
             }
@@ -141,21 +142,24 @@ trait SmartCaching
 
         // Cache if there are joins, subqueries, or multiple where clauses
         return count($queryWheres) > 1 ||
-               ! empty($this->getBuilder()->getQuery()->joins) ||
+               ! empty($this->resolveBuilder()->getQuery()->joins) ||
                strpos($this->toSql(), 'select') !== false;
     }
 
     /**
      * Smart implementation of executeQueryWithCaching.
      * This method is called from InteractsWithCache::smartExecuteQueryWithCaching.
+     *
+     * @return \Illuminate\Support\Collection<*, *>
      */
     protected function smartExecuteQueryWithCaching(): Collection
     {
         // If caching is disabled or shouldn't be used for this query
-        if (! method_exists($this, 'hasFeature') ||
-            ! $this->hasFeature('caching') ||
+        if (! $this->hasFeature('caching') ||
+            $this->getCacheExpiration() === 0 ||
+            $this->resolveBuilder()->getEagerLoads() !== [] ||
             (! $this->shouldCacheResults && ! $this->shouldAutomaticallyCacheQuery())) {
-            return $this->getBuilder()->get();
+            return $this->resolveBuilder()->get();
         }
 
         $cache = $this->getTaggedCache();
@@ -166,16 +170,14 @@ trait SmartCaching
             Carbon::now()->addMinutes($this->getCacheExpiration()),
             function (): Collection {
                 // Log actual DB query when building cache
-                if (method_exists($this, 'hasFeature') &&
-                    method_exists($this, 'logInfo') &&
-                    $this->hasFeature('logging')) {
+                if ($this->hasFeature('logging')) {
                     $this->logInfo('Building cache for query', [
                         'sql' => $this->toSql(),
-                        'bindings' => $this->getBuilder()->getBindings(),
+                        'bindings' => $this->resolveBuilder()->getBindings(),
                     ]);
                 }
 
-                return $this->getBuilder()->get();
+                return $this->resolveBuilder()->get();
             }
         );
     }

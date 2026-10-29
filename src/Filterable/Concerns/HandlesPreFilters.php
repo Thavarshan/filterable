@@ -27,7 +27,8 @@ trait HandlesPreFilters
      */
     protected function applyPreFilters(): void
     {
-        if ($this->preFilters === null) {
+        $preFilters = $this->preFilters;
+        if ($preFilters === null) {
             return;
         }
 
@@ -35,6 +36,6 @@ trait HandlesPreFilters
         $this->logInfo('Applying pre-filters');
 
         // Apply pre-filters to builder
-        ($this->preFilters)($this->builder);
+        $preFilters($this->resolveBuilder());
     }
 }

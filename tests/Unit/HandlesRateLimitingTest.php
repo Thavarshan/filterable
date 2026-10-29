@@ -9,15 +9,19 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Mockery as m;
+use Mockery\MockInterface;
 use ReflectionMethod;
 use ReflectionProperty;
 
 class HandlesRateLimitingTest extends TestCase
 {
+    /** @var Request */
     protected $request;
 
+    /** @var TestFilter */
     protected $filter;
 
+    /** @var RateLimiter&MockInterface */
     protected $rateLimiter;
 
     protected function setUp(): void
@@ -223,7 +227,7 @@ class HandlesRateLimitingTest extends TestCase
         // Mock the rate limiter responses
         $this->rateLimiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->with($expectedKey, 60, 60)
+            ->with($expectedKey, 60)
             ->andReturn(false);
 
         $this->rateLimiter->shouldReceive('hit')
@@ -269,7 +273,7 @@ class HandlesRateLimitingTest extends TestCase
         // Mock the rate limiter to say too many attempts
         $this->rateLimiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->with($expectedKey, 60, 60)
+            ->with($expectedKey, 60)
             ->andReturn(true);
 
         // The hit method should not be called if too many attempts
@@ -291,7 +295,7 @@ class HandlesRateLimitingTest extends TestCase
         $filter = new class($this->request) extends TestFilter
         {
             // Override to expose the result
-            public $rateLimitResult = null;
+            public ?bool $rateLimitResult = null;
 
             protected function checkRateLimits(): bool
             {
@@ -307,8 +311,8 @@ class HandlesRateLimitingTest extends TestCase
         // Mock the rateLimiter for the filter application
         $this->rateLimiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->withArgs(function ($key, $maxAttempts, $window) {
-                return is_string($key) && $maxAttempts === 60 && $window === 60;
+            ->withArgs(function ($key, $maxAttempts) {
+                return is_string($key) && $maxAttempts === 60;
             })
             ->andReturn(false);
 

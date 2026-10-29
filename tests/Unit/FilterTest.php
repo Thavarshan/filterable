@@ -13,6 +13,7 @@ use Filterable\Tests\Fixtures\MockTestFilter;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
 use Illuminate\Cache\RateLimiter;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,17 +21,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 use Mockery as m;
+use Mockery\MockInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class FilterTest extends TestCase
 {
+    /** @var Repository&MockInterface */
     protected Repository $cache;
 
     protected LoggerInterface $logger;
 
     protected Request $request;
 
+    /** @var \Illuminate\Database\Eloquent\Builder<*> */
     protected Builder $builder;
 
     protected MockFilterable $model;
@@ -149,7 +153,7 @@ class FilterTest extends TestCase
         {
             protected array $filters = ['test'];
 
-            protected function test($value): void
+            protected function test(mixed $value): void
             {
                 throw new Exception('Test exception');
             }
@@ -227,7 +231,7 @@ class FilterTest extends TestCase
         $result = $filter->runQuery($this->builder);
 
         // The main assertion is that the pipeline completes successfully and returns a collection
-        $this->assertInstanceOf(Collection::class, $result);
+        $this->assertRuntimeInstanceOf(Collection::class, $result);
     }
 
     public function test_uses_cached_execution_when_caching_enabled(): void
@@ -251,7 +255,8 @@ class FilterTest extends TestCase
         // Apply filter
         $filter->apply($this->builder);
 
-        // This is enough to test the caching feature - we're verifying that caching is enabled and apply completes
+        $this->assertSame(['cached_item'], $filter->get()->all());
+
         $this->assertEquals('applied', $filter->getDebugInfo()['state']);
     }
 
@@ -260,13 +265,14 @@ class FilterTest extends TestCase
         // Instead of using a mock, we'll use a special test class
         $filter = new class($this->request) extends MockTestFilter
         {
-            public $wasCalled = false;
+            public bool $wasCalled = false;
 
+            /** @return Collection<int, MockFilterable> */
             public function mockExecuteQueryWithMemoryManagement(): Collection
             {
                 $this->wasCalled = true;
 
-                return new Collection(['item1', 'item2']);
+                return new Collection([new MockFilterable(['name' => 'item1']), new MockFilterable(['name' => 'item2'])]);
             }
         };
 
@@ -280,7 +286,7 @@ class FilterTest extends TestCase
 
         // Verify that our method was called
         $this->assertTrue($filter->wasCalled);
-        $this->assertEquals(['item1', 'item2'], $results->toArray());
+        $this->assertEquals(['item1', 'item2'], $results->pluck('name')->all());
     }
 
     public function test_conditionally_runs_feature_specific_methods(): void
@@ -288,7 +294,8 @@ class FilterTest extends TestCase
         // Create a test class that tracks method calls
         $filter = new class($this->request) extends MockTestFilter
         {
-            public $methodsCalled = [];
+            /** @var list<string> */
+            public array $methodsCalled = [];
 
             protected function applyUserScope(): void
             {
@@ -323,7 +330,8 @@ class FilterTest extends TestCase
             protected function checkRateLimits(): bool
             {
                 $this->methodsCalled[] = 'checkRateLimits';
-                parent::checkRateLimits();
+
+                return parent::checkRateLimits();
             }
 
             protected function transformFilterValues(): void
@@ -369,7 +377,8 @@ class FilterTest extends TestCase
         // Create a test class that tracks method calls
         $filter = new class($this->request) extends TestFilter
         {
-            public $methodsCalled = [];
+            /** @var list<string> */
+            public array $methodsCalled = [];
 
             protected function validateFilterInputs(): void
             {
@@ -410,6 +419,9 @@ class FilterTest extends TestCase
             }
 
             // Implement actual apply method to ensure our features are called
+            /** @param \Illuminate\Database\Eloquent\Builder<*> $builder */
+            /** @param array<string, mixed>|null $options */
+            /** @return \Illuminate\Database\Eloquent\Builder<*> */
             public function apply(Builder $builder, ?array $options = []): Builder
             {
                 $this->builder = $builder;
@@ -443,7 +455,7 @@ class FilterTest extends TestCase
 
                 $this->state = 'applied';
 
-                return $this->builder;
+                return $this->resolveBuilder();
             }
         };
 
@@ -494,6 +506,7 @@ class FilterTest extends TestCase
         $this->assertEquals('applied', $debugInfo['state']);
 
         // Performance feature should be enabled
+        $this->assertIsArray($debugInfo['features_enabled']);
         $this->assertArrayHasKey('performance', $debugInfo['features_enabled']);
     }
 
@@ -531,7 +544,7 @@ class FilterTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('You must call apply() before streaming results.');
 
-        $filter->stream();
+        $_ = $filter->stream();
     }
 
     public function test_dispatches_lifecycle_events_on_successful_apply(): void
@@ -565,7 +578,7 @@ class FilterTest extends TestCase
         {
             protected array $filters = ['test'];
 
-            protected function test($value): void
+            protected function test(mixed $value): void
             {
                 throw new Exception('Test exception');
             }
@@ -596,7 +609,7 @@ class FilterTest extends TestCase
             }
         };
 
-        $user = m::mock(\Illuminate\Contracts\Auth\Authenticatable::class);
+        $user = m::mock(Authenticatable::class);
         $user->shouldReceive('getAuthIdentifierName')->andReturn('id');
         $user->shouldReceive('getAuthIdentifier')->andReturn(99);
 
@@ -609,10 +622,9 @@ class FilterTest extends TestCase
 
         $limiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->withArgs(function ($key, $maxAttempts, $window) use ($expectedKey) {
+            ->withArgs(function ($key, $maxAttempts) use ($expectedKey) {
                 $this->assertSame($expectedKey, $key);
                 $this->assertSame(60, $maxAttempts);
-                $this->assertSame(60, $window);
 
                 return true;
             })
@@ -669,10 +681,9 @@ class FilterTest extends TestCase
 
         $limiter->shouldReceive('tooManyAttempts')
             ->once()
-            ->withArgs(function ($key, $maxAttempts, $window) use ($expectedKey) {
+            ->withArgs(function ($key, $maxAttempts) use ($expectedKey) {
                 $this->assertSame($expectedKey, $key);
                 $this->assertSame(5, $maxAttempts);
-                $this->assertSame(120, $window);
 
                 return true;
             })

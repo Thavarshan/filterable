@@ -16,6 +16,8 @@ Filterable is a Laravel package for turning HTTP request parameters into rich, c
 
 ## Requirements
 
+Version 3.0 adds optional attributes and corrects input, authorization and caching behavior. Read the [attribute API and migration guide](docs/attributes-and-migration.md) for registration changes, precedence, runtime support and generated examples. See the optional [Laravel 13 vector-search recipe](docs/vector-search.md).
+
 - PHP 8.3, 8.4, or 8.5
 - Laravel 11.x, 12.x, or 13.x components (`illuminate/cache`, `illuminate/contracts`, `illuminate/database`, `illuminate/http`, `illuminate/support`)
 - A configured cache store when you enable caching features
@@ -42,7 +44,7 @@ Stubs live under `src/Filterable/Console/stubs/` and can be overridden by placin
 - Opt-in concerns for validation, permissions, rate limiting, caching (with heuristics), logging, performance metrics, query optimisation, memory management, value transformation, and fluent filter chaining.
 - Drop-in `Filterable` Eloquent scope trait so any model can accept a filter instance.
 - Smart caching that builds deterministic cache keys, supports tags, memoises counts, and can decide automatically when to cache complex queries.
-- Contextual binding in `FilterableServiceProvider` makes sure container-resolved filters receive the current HTTP `Request`; injecting a cache repository or PSR-3 logger auto-enables the relevant features.
+- Request binding in `FilterableServiceProvider` makes sure container-resolved filters receive the current HTTP `Request`; cache injection preserves the configured caching flag, while logger injection enables logging.
 - Memory-friendly helpers (`lazy`, `stream`, `streamGenerator`, `lazyEach`, `cursor`, `chunk`, `map`, `filter`, `reduce`) when the `memoryManagement` feature is enabled.
 - First-party Artisan generator with `--basic`, `--model`, and `--force` options to rapidly scaffold filters.
 
@@ -133,7 +135,7 @@ class PostFilter extends Filter
 }
 ```
 
-Define `protected array $filterMethodMap` when you need to alias request keys to method names. Programmatic filters can be appended with `appendFilterable('key', $value)` before `apply()` runs. Supplying an `Illuminate\Contracts\Cache\Repository` or `Psr\Log\LoggerInterface` to the constructor immediately enables the `caching` and `logging` features.
+Define `protected array $filterMethodMap` when you need to alias request keys to method names, or use `#[AsFilter('key')]`. Append registered programmatic inputs with `appendFilterable('key', $value)` before `apply()`. Cache injection supplies a repository; enable caching explicitly or through configuration/`CachePolicy`. Logger injection enables logging.
 
 ### 3. Attach the scope to a model
 
@@ -233,7 +235,7 @@ $filter->enableFeature('rateLimit')
 
 ### Caching & SmartCaching
 
-- Inject an `Illuminate\Contracts\Cache\Repository` or call `enableFeature('caching')` to activate caching. TTL defaults to 5 minutes or `config('filterable.defaults.cache.ttl')`; override per instance with `setCacheExpiration()`.
+- Call `enableFeature('caching')` or declare `CachePolicy` to activate caching. Injecting an `Illuminate\Contracts\Cache\Repository` preserves the feature flag. TTL defaults to 5 minutes or `config('filterable.defaults.cache.ttl')`; override per instance with `setCacheExpiration()`.
 - Opt into result or count caching via `cacheResults()` / `cacheCount()`, and scope invalidation with `cacheTags()`, `clearCache()`, and `clearRelatedCaches()`. Cache keys include sanitised filter values and optional user identifiers from `forUser()`.
 - `SmartCaching` will automatically cache more complex queries (multiple where clauses, joins, select statements) when `caching` is enabled, while skipping trivial single-clause lookups.
 
@@ -244,7 +246,8 @@ $filter->enableFeature('caching')
     ->cacheCount()
     ->setCacheExpiration(15);
 
-$posts = Post::query()->filter($filter)->get();
+$filter->apply(Post::query());
+$posts = $filter->get(); // Package result cache; builder->get() executes Eloquent normally.
 $total = $filter->count();
 ```
 
@@ -333,6 +336,7 @@ Package maintenance scripts live in `bin/` and are surfaced through Composer:
 
 ```bash
 composer lint            # Runs Tighten Duster lint mode + PHP syntax checks
+composer analyse         # Maximum-level Larastan across source and tests, no baseline
 composer fix             # Formats with Duster and writes a timestamped log
 composer test            # Executes PHPUnit via bin/test.sh
 ```

@@ -2,10 +2,10 @@
 
 namespace Filterable\Concerns;
 
-use Carbon\Carbon;
 use Filterable\Contracts\Filter;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 trait InteractsWithCache
 {
@@ -32,6 +32,9 @@ trait InteractsWithCache
      */
     public function setCacheExpiration(int $minutes): Filter
     {
+        if ($minutes < 0) {
+            throw new InvalidArgumentException('Cache TTL must be zero or greater.');
+        }
         $this->cacheExpiration = $minutes;
 
         return $this;
@@ -70,23 +73,16 @@ trait InteractsWithCache
             ]);
         }
 
-        $this->getCacheHandler()->forget($this->buildCacheKey());
+        $this->getTaggedCache()->forget($this->buildCacheKey());
+        $this->getTaggedCache()->forget($this->buildCacheKey().':count');
     }
 
     /**
      * Apply the filterables to the query with caching.
      */
-    protected function applyFilterablesWithCache(): Collection
+    protected function applyFilterablesWithCache(): void
     {
-        return $this->getCacheHandler()->remember(
-            $this->buildCacheKey(),
-            Carbon::now()->addMinutes($this->getCacheExpiration()),
-            function (): Collection {
-                $this->applyFiltersToQuery();
-
-                return $this->getBuilder()->get();
-            }
-        );
+        $this->applyFiltersToQuery();
     }
 
     /**
@@ -94,69 +90,32 @@ trait InteractsWithCache
      */
     protected function buildCacheKey(): string
     {
-        // Create a unique cache key with sanitized inputs
-        $userPart = 'global';
+        if ($this->builder !== null) {
+            $builder = $this->builder;
+            $connection = $builder->getConnection();
 
-        // Check if forUser property exists, is not null, and has getAuthIdentifier method
-        if (property_exists($this, 'forUser') && $this->forUser !== null && method_exists($this->forUser, 'getAuthIdentifier')) {
-            $userPart = $this->forUser->getAuthIdentifier() ?? 'global';
+            return 'filters:'.hash('sha256', serialize([
+                static::class, $builder->getModel()::class,
+                $builder->getModel()->getConnectionName(), $connection->getDatabaseName(),
+                $builder->toSql(), $builder->getBindings(), $builder->getEagerLoads() === [] ? [] : array_keys($builder->getEagerLoads()),
+                $this->options['cache_context'] ?? null,
+                $this->forUser?->getAuthIdentifier(),
+                ($this->actorSet ? $this->authorizationActor : $this->request->user())?->getAuthIdentifier(),
+            ]));
         }
 
-        // Get the filterables, sort them by key, and normalize them
-        $filterables = $this->getFilterables();
-        ksort($filterables);
-
-        // Sanitize values for use in cache keys
-        $sanitizedFilterables = [];
-        foreach ($filterables as $key => $value) {
-            // Handle different data types appropriately
-            if (is_array($value)) {
-                $sanitizedValue = md5(json_encode($value));
-            } elseif (is_scalar($value)) {
-                $sanitizedValue = (string) $value;
-            } else {
-                $sanitizedValue = md5(serialize($value));
-            }
-
-            $sanitizedFilterables[$key] = $sanitizedValue;
-        }
-
-        $filtersPart = http_build_query($sanitizedFilterables);
-        $cacheKey = "filters:{$userPart}:".md5($filtersPart);
-
-        // Make sure the cache key isn't too long
-        if (strlen($cacheKey) > 250) {
-            $cacheKey = "filters:{$userPart}:".md5($filtersPart);
-        }
-
-        return $cacheKey;
+        // Before apply there is no query identity yet. This path is useful for diagnostics only.
+        return 'filters:'.hash('sha256', static::class);
     }
 
     /**
      * Execute a query with caching if needed.
      * This method delegates to SmartCaching if available.
+     *
+     * @return \Illuminate\Support\Collection<*, *>
      */
     protected function executeQueryWithCaching(): Collection
     {
-        // If SmartCaching is loaded, use it
-        if (method_exists($this, 'shouldAutomaticallyCacheQuery')) {
-            return $this->smartExecuteQueryWithCaching();
-        }
-
-        // Otherwise, use basic caching
-        if (! $this->hasFeature('caching')) {
-            return $this->getBuilder()->get();
-        }
-
-        $cache = $this->getCacheHandler();
-        $cacheKey = $this->buildCacheKey();
-
-        return $cache->remember(
-            $cacheKey,
-            Carbon::now()->addMinutes($this->getCacheExpiration()),
-            function (): Collection {
-                return $this->getBuilder()->get();
-            }
-        );
+        return $this->smartExecuteQueryWithCaching();
     }
 }

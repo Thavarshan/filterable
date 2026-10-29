@@ -4,9 +4,19 @@ namespace Filterable\Tests\Unit;
 
 use Filterable\Tests\TestCase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Testing\PendingCommand;
 
 class MakeFilterCommandTest extends TestCase
 {
+    /** @param array<string, mixed> $parameters */
+    private function filterCommand(string $command, array $parameters): PendingCommand
+    {
+        $pending = $this->artisan($command, $parameters);
+        $this->assertInstanceOf(PendingCommand::class, $pending);
+
+        return $pending;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -25,7 +35,7 @@ class MakeFilterCommandTest extends TestCase
 
     public function test_can_generate_a_new_filter_class(): void
     {
-        $this->artisan('make:filter', ['name' => 'FooFilter'])
+        $this->filterCommand('make:filter', ['name' => 'FooFilter'])
             ->assertExitCode(0);
 
         $this->assertFileExists(app_path('Filters/FooFilter.php'));
@@ -38,7 +48,7 @@ class MakeFilterCommandTest extends TestCase
 
     public function test_can_generate_a_basic_filter_class(): void
     {
-        $this->artisan('make:filter', [
+        $this->filterCommand('make:filter', [
             'name' => 'BasicFilter',
             '--basic' => true,
         ])
@@ -54,7 +64,7 @@ class MakeFilterCommandTest extends TestCase
 
     public function test_can_generate_a_model_specific_filter_class(): void
     {
-        $this->artisan('make:filter', [
+        $this->filterCommand('make:filter', [
             'name' => 'UserFilter',
             '--model' => 'User',
         ])
@@ -72,7 +82,7 @@ class MakeFilterCommandTest extends TestCase
     public function test_can_override_existing_filter_with_force_option(): void
     {
         // Create a filter first
-        $this->artisan('make:filter', ['name' => 'CustomFilter'])
+        $this->filterCommand('make:filter', ['name' => 'CustomFilter'])
             ->assertExitCode(0);
 
         // Initial content
@@ -86,7 +96,7 @@ class CustomFilter', $initialContent)
         );
 
         // Regenerate with --force
-        $this->artisan('make:filter', [
+        $this->filterCommand('make:filter', [
             'name' => 'CustomFilter',
             '--force' => true,
         ])
@@ -100,7 +110,7 @@ class CustomFilter', $initialContent)
     public function test_wont_override_existing_filter_without_force_option(): void
     {
         // Create a filter first
-        $this->artisan('make:filter', ['name' => 'CustomFilter'])
+        $this->filterCommand('make:filter', ['name' => 'CustomFilter'])
             ->assertExitCode(0);
 
         // Modify the file to verify it doesn't change
@@ -110,7 +120,7 @@ class CustomFilter', $initialContent)
         );
 
         // Try to regenerate without --force
-        $this->artisan('make:filter', ['name' => 'CustomFilter'])
+        $this->filterCommand('make:filter', ['name' => 'CustomFilter'])
             ->assertExitCode(0); // Laravel's GeneratorCommand returns 0 even for skips
 
         // Check that the original file is unchanged

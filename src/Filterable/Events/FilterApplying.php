@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class FilterApplying
 {
+    /** @param \Illuminate\Database\Eloquent\Builder<*> $builder */
     public function __construct(
         public readonly Filter $filter,
         public readonly Builder $builder,

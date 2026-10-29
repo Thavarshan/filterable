@@ -33,6 +33,8 @@ trait MonitorsPerformance
 
     /**
      * Get all performance metrics.
+     *
+     * @return array<mixed>
      */
     public function getMetrics(): array
     {
@@ -44,7 +46,9 @@ trait MonitorsPerformance
      */
     public function getExecutionTime(): ?float
     {
-        return $this->metrics['execution_time'] ?? null;
+        $time = $this->metrics['execution_time'] ?? null;
+
+        return is_numeric($time) ? (float) $time : null;
     }
 
     /**
@@ -63,7 +67,7 @@ trait MonitorsPerformance
         $this->endTime = microtime(true);
         $this->metrics['execution_time'] = $this->endTime - $this->startTime;
 
-        if (method_exists($this, 'logInfo')) {
+        if ($this->hasFeature('logging')) {
             $this->logInfo('Filter executed', [
                 'execution_time' => $this->metrics['execution_time'],
                 'memory_usage' => memory_get_usage(true),

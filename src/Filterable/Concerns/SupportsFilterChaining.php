@@ -4,6 +4,7 @@ namespace Filterable\Concerns;
 
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 trait SupportsFilterChaining
 {
@@ -34,6 +35,8 @@ trait SupportsFilterChaining
 
     /**
      * Add a custom where in clause to the query.
+     *
+     * @param  array<mixed>  $values
      */
     public function whereIn(string $column, array $values): self
     {
@@ -46,6 +49,8 @@ trait SupportsFilterChaining
 
     /**
      * Add a custom where not in clause to the query.
+     *
+     * @param  array<mixed>  $values
      */
     public function whereNotIn(string $column, array $values): self
     {
@@ -58,6 +63,8 @@ trait SupportsFilterChaining
 
     /**
      * Add a custom where between clause to the query.
+     *
+     * @param  array<mixed>  $values
      */
     public function whereBetween(string $column, array $values): self
     {
@@ -73,6 +80,10 @@ trait SupportsFilterChaining
      */
     public function orderBy(string $column, string $direction = 'asc'): self
     {
+        $direction = strtolower($direction);
+        if ($direction !== 'asc' && $direction !== 'desc') {
+            throw new InvalidArgumentException('Order direction must be asc or desc.');
+        }
         $this->customFilters[] = function (Builder $query) use ($column, $direction) {
             return $query->orderBy($column, $direction);
         };

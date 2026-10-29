@@ -34,13 +34,13 @@ trait HandlesUserScope
         $attribute = $this->forUser->getAuthIdentifierName();
         $value = $this->forUser->getAuthIdentifier();
 
-        if (method_exists($this, 'logInfo')) {
+        if ($this->hasFeature('logging')) {
             $this->logInfo('Applying user-specific filter', [
                 'attribute' => $attribute,
                 'value' => $value,
             ]);
         }
 
-        $this->getBuilder()->where($attribute, $value);
+        $this->resolveBuilder()->where($attribute, $value);
     }
 }

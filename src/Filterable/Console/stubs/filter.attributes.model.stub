@@ -1,0 +1,24 @@
+<?php
+
+namespace {{ namespace }};
+
+use Filterable\Attributes\AsFilter;
+use Filterable\Attributes\FilterRules;
+use Filterable\Filter;
+use {{ namespacedModel }};
+
+/** Filters queries for {{ model }}. */
+class {{ class }} extends Filter
+{
+    #[AsFilter('search'), FilterRules(['string', 'max:255'])]
+    protected function search(string $value): void
+    {
+        $this->getBuilder()->where('name', 'like', "%{$value}%");
+    }
+
+    #[AsFilter('sort'), FilterRules(['in:id,-id,created_at,-created_at'])]
+    protected function sort(string $value): void
+    {
+        $this->getBuilder()->orderBy(ltrim($value, '-'), str_starts_with($value, '-') ? 'desc' : 'asc');
+    }
+}

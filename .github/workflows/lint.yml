@@ -1,6 +1,6 @@
 name: Lint
 
-on: [push]
+on: [push, pull_request, workflow_dispatch]
 
 permissions:
   contents: read
@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [8.4]
+        php: [8.3]
 
     steps:
       - name: Checkout code
@@ -29,6 +29,9 @@ jobs:
 
       - name: Run lint
         run: composer lint
+
+      - name: Static analysis
+        run: composer analyse
 
       # - name: Commit linted files
       #   uses: stefanzweifel/git-auto-commit-action@v5

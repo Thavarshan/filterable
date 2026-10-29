@@ -7,6 +7,7 @@ use Filterable\Concerns\HandlesFilterPermissions;
 use Filterable\Concerns\HandlesPreFilters;
 use Filterable\Concerns\HandlesRateLimiting;
 use Filterable\Concerns\HandlesUserScope;
+use Filterable\Concerns\HasFilterDefinitions;
 use Filterable\Concerns\InteractsWithCache;
 use Filterable\Concerns\InteractsWithLogging;
 use Filterable\Concerns\ManagesMemory;
@@ -20,6 +21,7 @@ use Filterable\Contracts\Filter as FilterContract;
 use Filterable\Events\FilterApplied;
 use Filterable\Events\FilterApplying;
 use Filterable\Events\FilterFailed;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -27,6 +29,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -48,9 +51,12 @@ abstract class Filter implements FilterContract
         SupportsFilterChaining,
         TransformsFilterValues,
         ValidatesFilterInput;
+    use HasFilterDefinitions;
 
     /**
      * The Eloquent builder instance.
+     *
+     * @var \Illuminate\Database\Eloquent\Builder<*>|null
      */
     protected ?Builder $builder = null;
 
@@ -100,6 +106,7 @@ abstract class Filter implements FilterContract
         ?LoggerInterface $logger = null
     ) {
         $this->applyConfigurationDefaults();
+        $this->applyDefinitionDefaults();
 
         // Set up the dependencies
         if ($cache) {
@@ -114,6 +121,10 @@ abstract class Filter implements FilterContract
 
     /**
      * Apply the filters.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $builder
+     * @param  array<string, mixed>|null  $options
+     * @return \Illuminate\Database\Eloquent\Builder<*>
      */
     public function apply(Builder $builder, ?array $options = []): Builder
     {
@@ -122,6 +133,8 @@ abstract class Filter implements FilterContract
             throw new RuntimeException("Filter cannot be reapplied. Current state: {$this->state}");
         }
 
+        $this->validateFilterDefinitions();
+        $this->getFilterables();
         $this->builder = $builder;
         $this->options = array_merge($this->options, $options ?? []);
         $this->state = 'applying';
@@ -136,35 +149,31 @@ abstract class Filter implements FilterContract
         // Log start of filter application if logging is enabled
         if ($this->hasFeature('logging')) {
             $this->logInfo('Beginning filter application', [
-                'filters' => $this->getFilterables(),
                 'options' => $this->options,
             ]);
         }
 
-        // Apply query optimizations if enabled
-        if ($this->hasFeature('optimization')) {
-            $this->optimizeQuery();
-        }
-
         try {
             // Security checks (only if the features are enabled)
-            if ($this->hasFeature('validation')) {
-                $this->validateFilterInputs();
-            }
-
             if ($this->hasFeature('permissions')) {
                 $this->checkFilterPermissions();
             }
 
-            if ($this->hasFeature('rateLimit')) {
-                if (! $this->checkRateLimits()) {
-                    throw new RuntimeException('Filter request exceeded rate limit or complexity threshold');
-                }
+            if ($this->hasFeature('validation')) {
+                $this->validateFilterInputs();
             }
 
             // Apply value transformations if enabled
             if ($this->hasFeature('valueTransformation')) {
                 $this->transformFilterValues();
+            }
+
+            if ($this->hasFeature('rateLimit') && ! $this->checkRateLimits()) {
+                throw new AuthorizationException('Filter request exceeded rate limit or complexity threshold');
+            }
+
+            if ($this->hasFeature('optimization')) {
+                $this->optimizeQuery();
             }
 
             // Core filtering (always applied)
@@ -179,7 +188,7 @@ abstract class Filter implements FilterContract
 
             $this->state = 'applied';
 
-            Event::dispatch(new FilterApplied($this, $this->builder, $this->getCurrentFilters()));
+            Event::dispatch(new FilterApplied($this, $this->resolveBuilder(), $this->getCurrentFilters()));
 
             // Log completion of filter application if logging is enabled
             $this->logInfo('Filter application completed', [
@@ -195,10 +204,10 @@ abstract class Filter implements FilterContract
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            Event::dispatch(new FilterFailed($this, $this->builder, $e));
+            Event::dispatch(new FilterFailed($this, $this->resolveBuilder(), $e));
 
             // Always rethrow validation exceptions
-            if ($e instanceof ValidationException) {
+            if ($e instanceof ValidationException || $e instanceof AuthorizationException || $e instanceof InvalidArgumentException) {
                 throw $e;
             }
 
@@ -211,11 +220,13 @@ abstract class Filter implements FilterContract
             $this->endTiming();
         }
 
-        return $this->builder;
+        return $this->resolveBuilder();
     }
 
     /**
      * Execute the query and get the results.
+     *
+     * @return \Illuminate\Support\Collection<*, *>
      */
     public function get(): Collection
     {
@@ -242,11 +253,15 @@ abstract class Filter implements FilterContract
         }
 
         // Otherwise, just execute the query
-        return $this->getBuilder()->get();
+        return $this->resolveBuilder()->get();
     }
 
     /**
      * Run the full filter pipeline and get results in one step.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $builder
+     * @param  array<string, mixed>|null  $options
+     * @return \Illuminate\Support\Collection<*, *>
      */
     public function runQuery(Builder $builder, ?array $options = []): Collection
     {
@@ -269,6 +284,8 @@ abstract class Filter implements FilterContract
 
     /**
      * Enable multiple features at once.
+     *
+     * @param  list<string>  $features
      */
     public function enableFeatures(array $features): self
     {
@@ -301,6 +318,8 @@ abstract class Filter implements FilterContract
 
     /**
      * Get execution statistics and query info for debugging.
+     *
+     * @return array<mixed>
      */
     public function getDebugInfo(): array
     {
@@ -313,8 +332,8 @@ abstract class Filter implements FilterContract
 
         // Add SQL info if we have a builder
         if ($this->builder) {
-            $debugInfo['sql'] = $this->getBuilder()->toSql();
-            $debugInfo['bindings'] = $this->getBuilder()->getBindings();
+            $debugInfo['sql'] = $this->resolveBuilder()->toSql();
+            $debugInfo['bindings'] = $this->resolveBuilder()->getBindings();
         }
 
         // Add performance metrics if available
@@ -327,6 +346,8 @@ abstract class Filter implements FilterContract
 
     /**
      * Get the Eloquent builder instance.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<*>|null
      */
     public function getBuilder(): ?Builder
     {
@@ -335,6 +356,8 @@ abstract class Filter implements FilterContract
 
     /**
      * Set the Eloquent builder instance.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $builder
      */
     public function setBuilder(Builder $builder): self
     {
@@ -386,8 +409,13 @@ abstract class Filter implements FilterContract
         $this->builder = null;
         $this->lastException = null;
         $this->filterables = [];
+        $this->rawFilterables = [];
+        $this->inputsResolved = false;
         $this->currentFilters = [];
         $this->customFilters = [];
+        $this->forUser = null;
+        $this->authorizationActor = null;
+        $this->actorSet = false;
 
         return $this;
     }
@@ -427,22 +455,39 @@ abstract class Filter implements FilterContract
     protected function applyConfigurationDefaults(): void
     {
         $defaults = config('filterable.defaults', []);
-
-        if (isset($defaults['features']) && is_array($defaults['features'])) {
-            $featureDefaults = array_intersect_key($defaults['features'], $this->features);
-            $this->features = array_merge($this->features, $featureDefaults);
+        if (! is_array($defaults)) {
+            throw new InvalidArgumentException('Filterable defaults must be an array.');
         }
-
-        if (isset($defaults['options']) && is_array($defaults['options'])) {
-            foreach ($defaults['options'] as $key => $value) {
-                $this->options[$key] = $value;
+        $features = $defaults['features'] ?? [];
+        if (! is_array($features)) {
+            throw new InvalidArgumentException('Filterable feature defaults must be an array.');
+        }
+        foreach ($features as $feature => $enabled) {
+            if (! is_string($feature) || ! is_bool($enabled) || ! array_key_exists($feature, $this->features)) {
+                throw new InvalidArgumentException('Invalid Filterable feature default.');
             }
+            $this->features[$feature] = $enabled;
         }
-
-        $configuredTtl = $defaults['cache']['ttl'] ?? null;
-
-        if (is_numeric($configuredTtl)) {
-            $this->cacheExpiration = (int) $configuredTtl;
+        $options = $defaults['options'] ?? [];
+        if (! is_array($options)) {
+            throw new InvalidArgumentException('Filterable option defaults must be an array.');
+        }
+        foreach ($options as $key => $value) {
+            if (! is_string($key)) {
+                throw new InvalidArgumentException('Filterable option keys must be strings.');
+            }
+            $this->options[$key] = $value;
+        }
+        $cache = $defaults['cache'] ?? [];
+        if (! is_array($cache)) {
+            throw new InvalidArgumentException('Filterable cache defaults must be an array.');
+        }
+        $ttl = $cache['ttl'] ?? null;
+        if ($ttl !== null) {
+            if (! is_numeric($ttl) || (int) $ttl < 0) {
+                throw new InvalidArgumentException('Cache TTL must be zero or greater.');
+            }
+            $this->cacheExpiration = (int) $ttl;
         }
     }
 }

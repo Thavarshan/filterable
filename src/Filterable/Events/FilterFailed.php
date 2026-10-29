@@ -8,6 +8,7 @@ use Throwable;
 
 class FilterFailed
 {
+    /** @param \Illuminate\Database\Eloquent\Builder<*> $builder */
     public function __construct(
         public readonly Filter $filter,
         public readonly Builder $builder,

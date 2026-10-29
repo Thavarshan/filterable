@@ -35,6 +35,9 @@ trait TransformsFilterValues
 
     /**
      * Apply a transformer to each value in an array.
+     *
+     * @param  array<mixed>  $values
+     * @return array<mixed>
      */
     protected function transformArray(array $values, callable $transformer): array
     {

@@ -59,11 +59,11 @@ class FilterDependencyInjectionTest extends TestCase
         $request = Request::create('/posts', 'GET', [
             'name' => 'John',
         ]);
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Resolve the filter from the DI container (as Laravel would in a controller)
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // The filter should have access to the request parameters
         $filterables = $filter->getFilterables();
@@ -80,30 +80,30 @@ class FilterDependencyInjectionTest extends TestCase
             'name' => 'John Doe',
         ]);
 
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Resolve the filter from the DI container
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // Apply the filter to a query
         $results = MockFilterable::query()->filter($filter)->get();
 
         // Should only return John Doe
         $this->assertCount(1, $results);
-        $this->assertEquals('John Doe', $results->first()->name);
+        $this->assertEquals('John Doe', $results->firstOrFail()->getAttribute('name'));
     }
 
     public function test_filter_resolved_with_multiple_parameters(): void
     {
         // Simulate a request with multiple filter parameters
-        $this->app['request']->merge([
+        app(Request::class)->merge([
             'name' => 'J',
             'email' => 'example.com',
         ]);
 
         // Resolve the filter from the DI container
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // The filter should have access to all request parameters
         $filterables = $filter->getFilterables();
@@ -117,13 +117,14 @@ class FilterDependencyInjectionTest extends TestCase
     public function test_filter_resolved_via_controller_style_injection(): void
     {
         // Simulate a request with filter parameters
-        $this->app['request']->merge([
+        app(Request::class)->merge([
             'name' => 'Jane',
         ]);
 
         // Simulate controller-style method injection
         $controller = new class
         {
+            /** @return array<mixed> */
             public function index(MockFilter $filter): array
             {
                 return $filter->getFilterables();
@@ -131,7 +132,7 @@ class FilterDependencyInjectionTest extends TestCase
         };
 
         // Resolve the controller method dependencies (simulating Laravel's behavior)
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
         $filterables = $controller->index($filter);
 
         $this->assertArrayHasKey('name', $filterables);
@@ -141,10 +142,10 @@ class FilterDependencyInjectionTest extends TestCase
     public function test_filter_works_correctly_when_request_is_empty(): void
     {
         // Ensure request has no filter parameters
-        $this->app['request']->replace([]);
+        app(Request::class)->replace([]);
 
         // Resolve the filter from the DI container
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // The filterables should be empty
         $filterables = $filter->getFilterables();
@@ -166,11 +167,11 @@ class FilterDependencyInjectionTest extends TestCase
         ]);
 
         // Replace the current request in the container
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Resolve the filter from the DI container
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // The filter should have access to the query parameters
         $filterables = $filter->getFilterables();
@@ -184,7 +185,7 @@ class FilterDependencyInjectionTest extends TestCase
         $results = MockFilterable::query()->filter($filter)->get();
 
         $this->assertCount(1, $results);
-        $this->assertEquals('Bob Johnson', $results->first()->name);
+        $this->assertEquals('Bob Johnson', $results->firstOrFail()->getAttribute('name'));
     }
 
     public function test_filter_injection_works_with_other_dependencies(): void
@@ -194,23 +195,23 @@ class FilterDependencyInjectionTest extends TestCase
             'name' => 'John',
         ]);
 
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Bind cache and logger so they get injected
-        $cache = $this->app->make(Cache::class);
-        $logger = $this->app->make(LoggerInterface::class);
+        $cache = app()->make(Cache::class);
+        $logger = app()->make(LoggerInterface::class);
 
-        $this->app->when(FilterWithDependencies::class)
+        app()->when(FilterWithDependencies::class)
             ->needs(Cache::class)
             ->give(fn () => $cache);
 
-        $this->app->when(FilterWithDependencies::class)
+        app()->when(FilterWithDependencies::class)
             ->needs(LoggerInterface::class)
             ->give(fn () => $logger);
 
         // Create a filter with additional dependencies injected
-        $filter = $this->app->make(FilterWithDependencies::class);
+        $filter = app()->make(FilterWithDependencies::class);
 
         // The filter should have access to the request parameters
         $filterables = $filter->getFilterables();
@@ -225,24 +226,24 @@ class FilterDependencyInjectionTest extends TestCase
         // Verify the filter actually works when applied
         $results = MockFilterable::query()->filter($filter)->get();
         $this->assertCount(2, $results); // John Doe and Bob Johnson contain 'John'
-        $this->assertTrue($results->every(fn ($r) => str_contains($r->name, 'John')));
+        $this->assertTrue($results->every(fn ($r) => str_contains($r->name ?? '', 'John')));
     }
 
     public function test_multiple_filter_resolutions_use_current_request(): void
     {
         // First request - use $app->instance() for consistency
         $firstRequest = Request::create('/posts', 'GET', ['name' => 'John']);
-        $this->app->instance('request', $firstRequest);
-        $this->app->instance(Request::class, $firstRequest);
-        $filter1 = $this->app->make(MockFilter::class);
+        app()->instance('request', $firstRequest);
+        app()->instance(Request::class, $firstRequest);
+        $filter1 = app()->make(MockFilter::class);
 
         // Second request - same approach for consistency
         $secondRequest = Request::create('/posts', 'GET', ['name' => 'Jane']);
-        $this->app->instance('request', $secondRequest);
-        $this->app->instance(Request::class, $secondRequest);
+        app()->instance('request', $secondRequest);
+        app()->instance(Request::class, $secondRequest);
 
         // Second filter resolution should get the new request
-        $filter2 = $this->app->make(MockFilter::class);
+        $filter2 = app()->make(MockFilter::class);
 
         // Filter 1 was already constructed with 'John'
         $filterables1 = $filter1->getFilterables();
@@ -262,11 +263,11 @@ class FilterDependencyInjectionTest extends TestCase
         ]);
 
         // Replace the current request in the container
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Resolve the filter from the DI container
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // The filter should have access to the POST parameters
         $filterables = $filter->getFilterables();
@@ -285,15 +286,15 @@ class FilterDependencyInjectionTest extends TestCase
             [],
             [],
             ['CONTENT_TYPE' => 'application/json'],
-            json_encode(['name' => 'John', 'email' => 'john@example.com'])
+            json_encode(['name' => 'John', 'email' => 'john@example.com'], JSON_THROW_ON_ERROR)
         );
 
         // Replace the current request in the container
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Resolve the filter from the DI container
-        $filter = $this->app->make(MockFilter::class);
+        $filter = app()->make(MockFilter::class);
 
         // The filter should have access to the JSON parameters
         $filterables = $filter->getFilterables();
@@ -318,15 +319,15 @@ class FilterDependencyInjectionTest extends TestCase
             'name' => 'Jane',
         ]);
 
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Method 1: Manual instantiation (always worked)
-        $manualFilter = new MockFilter($this->app['request']);
+        $manualFilter = new MockFilter(app(Request::class));
         $manualResults = MockFilterable::query()->filter($manualFilter)->get();
 
         // Method 2: DI container resolution (was broken before fix)
-        $diFilter = $this->app->make(MockFilter::class);
+        $diFilter = app()->make(MockFilter::class);
         $diResults = MockFilterable::query()->filter($diFilter)->get();
 
         // Both methods should produce identical results
@@ -339,7 +340,7 @@ class FilterDependencyInjectionTest extends TestCase
         // Both should find only Jane Smith
         $this->assertCount(1, $manualResults);
         $this->assertCount(1, $diResults);
-        $this->assertEquals('Jane Smith', $diResults->first()->name);
+        $this->assertEquals('Jane Smith', $diResults->firstOrFail()->getAttribute('name'));
     }
 
     /**
@@ -358,11 +359,11 @@ class FilterDependencyInjectionTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->app->instance('request', $request);
-        $this->app->instance(Request::class, $request);
+        app()->instance('request', $request);
+        app()->instance(Request::class, $request);
 
         // Simulate what happens in a controller: public function index(StatusFilter $filter)
-        $filter = $this->app->make(StatusFilter::class);
+        $filter = app()->make(StatusFilter::class);
 
         // Verify the filter has the request parameters
         $filterables = $filter->getFilterables();
@@ -387,7 +388,7 @@ class StatusFilter extends Filter
 
     protected function status(string $value): void
     {
-        $this->getBuilder()->where('status', $value);
+        $this->resolveBuilder()->where('status', $value);
     }
 }
 
@@ -410,11 +411,11 @@ class FilterWithDependencies extends Filter
 
     protected function name(string $value): void
     {
-        $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+        $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
     }
 
     protected function email(string $value): void
     {
-        $this->getBuilder()->where('email', 'LIKE', "%{$value}%");
+        $this->resolveBuilder()->where('email', 'LIKE', "%{$value}%");
     }
 }

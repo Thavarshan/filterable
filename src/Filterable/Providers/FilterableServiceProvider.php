@@ -3,6 +3,7 @@
 namespace Filterable\Providers;
 
 use Filterable\Console\MakeFilterCommand;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -12,6 +13,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function configurePackage(Package $package): void
     {
         $package->name('filterable')
@@ -22,6 +24,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function packageRegistered(): void
     {
         $this->registerFilterBindings();
@@ -39,14 +42,15 @@ class FilterableServiceProvider extends PackageServiceProvider
         // This ensures Filter subclasses get the active HTTP request instead of an empty one.
         // Using bindIf() ensures we don't override any existing Request bindings.
         // Tests can still override this by calling $app->instance(Request::class, $request).
-        $this->app->bindIf(Request::class, function ($app) {
-            return $app['request'];
+        $this->app->bindIf(Request::class, function (Application $app) {
+            return $app->make('request');
         });
     }
 
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getPackageBaseDir(): string
     {
         return dirname(__DIR__, 2);

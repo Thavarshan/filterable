@@ -9,14 +9,16 @@ use Filterable\Tests\TestCase;
 use Filterable\Traits\Filterable;
 use Illuminate\Database\Eloquent\Builder;
 use Mockery as m;
+use Mockery\MockInterface;
 
 final class FilterableTest extends TestCase
 {
     /**
      * A mock of a Filter interface to be applied.
      *
-     * @var \Mockery\MockInterface
+     * @var MockInterface
      */
+    /** @var Filter&MockInterface */
     protected $filter;
 
     /**

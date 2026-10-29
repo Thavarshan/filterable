@@ -4,6 +4,7 @@ namespace Filterable\Tests;
 
 use Filterable\Providers\FilterableServiceProvider;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -12,6 +13,18 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 class TestCase extends BaseTestCase
 {
     use DatabaseMigrations;
+
+    /**
+     * Runtime contract assertions intentionally verify the declared type.
+     *
+     * @template T of object
+     *
+     * @param  class-string<T>  $class
+     */
+    protected function assertRuntimeInstanceOf(string $class, mixed $value): void
+    {
+        $this->assertInstanceOf($class, $value);
+    }
 
     /**
      * {@inheritdoc}
@@ -25,6 +38,18 @@ class TestCase extends BaseTestCase
             'prefix' => '',
             'foreign_key_constraints' => false,
         ]);
+        if ($driver = getenv('FILTERABLE_TEST_DB')) {
+            $app['config']->set('database.connections.testing', [
+                'driver' => $driver,
+                'host' => getenv('DB_HOST') ?: '127.0.0.1',
+                'port' => getenv('DB_PORT') ?: ($driver === 'mysql' ? 3306 : 5432),
+                'database' => getenv('DB_DATABASE') ?: 'test_filterable',
+                'username' => getenv('DB_USERNAME'),
+                'password' => getenv('DB_PASSWORD'),
+                'charset' => $driver === 'mysql' ? 'utf8mb4' : 'utf8',
+                'prefix' => '',
+            ]);
+        }
     }
 
     /**
@@ -34,13 +59,18 @@ class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        $this->setUpDatabase($this->app);
+        $this->setUpDatabase(app());
 
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Filterable\\Tests\\Fixtures\\'.class_basename($modelName).'Factory'
-        );
+        Factory::guessFactoryNamesUsing(function (string $modelName) {
+            $factory = 'Filterable\\Tests\\Fixtures\\'.class_basename($modelName).'Factory';
+            if (! is_subclass_of($factory, Factory::class)) {
+                throw new \InvalidArgumentException('Unknown test model factory.');
+            }
 
-        $this->app['config']->set('database.default', 'testing');
+            return $factory;
+        });
+
+        config()->set('database.default', 'testing');
     }
 
     /**
@@ -48,8 +78,7 @@ class TestCase extends BaseTestCase
      */
     protected function setUpDatabase(Application $app): void
     {
-        $connectionName = $app['config']->get('database.default', 'testing');
-        $schemaBuilder = $app['db']->connection($connectionName)->getSchemaBuilder();
+        $schemaBuilder = $app->make(DatabaseManager::class)->connection()->getSchemaBuilder();
 
         $schemaBuilder->dropIfExists('migrations');
         $schemaBuilder->dropIfExists('mocks');

@@ -12,6 +12,11 @@
         <directory>tests</directory>
     </testsuite>
 </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">src</directory>
+        </include>
+    </source>
     <php>
         <env name="DB_CONNECTION" value="mysql"/>
         <env name="DB_USERNAME" value="root"/>

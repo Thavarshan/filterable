@@ -11,7 +11,7 @@ class MockFilter extends TestFilter
     /**
      * Registered filters.
      *
-     * @var array<string>
+     * @var array<int, string>
      */
     protected array $filters = ['name', 'email'];
 
@@ -31,7 +31,7 @@ class MockFilter extends TestFilter
      */
     protected function name(string $value): void
     {
-        $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+        $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
     }
 
     /**
@@ -39,6 +39,6 @@ class MockFilter extends TestFilter
      */
     protected function email(string $value): void
     {
-        $this->getBuilder()->where('email', 'LIKE', "%{$value}%");
+        $this->resolveBuilder()->where('email', 'LIKE', "%{$value}%");
     }
 }

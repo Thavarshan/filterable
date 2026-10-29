@@ -10,7 +10,7 @@ trait ValidatesFilterInput
     /**
      * Validation rules for filters.
      *
-     * @var array<string, string|array>
+     * @var array<string, string|array<mixed>>
      */
     protected array $validationRules = [];
 
@@ -24,6 +24,7 @@ trait ValidatesFilterInput
     /**
      * Set validation rules for filter inputs.
      */
+    /** @param array<string, string|array<mixed>> $rules */
     public function setValidationRules(array $rules): self
     {
         $this->validationRules = $rules;
@@ -33,6 +34,8 @@ trait ValidatesFilterInput
 
     /**
      * Add a validation rule for a specific filter.
+     *
+     * @param  string|array<mixed>  $rule
      */
     public function addValidationRule(string $filter, string|array $rule): self
     {
@@ -44,6 +47,7 @@ trait ValidatesFilterInput
     /**
      * Set validation messages.
      */
+    /** @param array<string, string> $messages */
     public function setValidationMessages(array $messages): self
     {
         $this->validationMessages = $messages;
@@ -71,7 +75,7 @@ trait ValidatesFilterInput
             return;
         }
 
-        if (method_exists($this, 'logInfo')) {
+        if ($this->hasFeature('logging')) {
             $this->logInfo('Validating filter inputs', [
                 'inputs' => $toValidate,
                 'rules' => array_intersect_key($this->validationRules, $toValidate),

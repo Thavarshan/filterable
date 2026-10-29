@@ -6,14 +6,18 @@ use BadMethodCallException;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class HandlesFilterablesTest extends TestCase
 {
+    /** @var Request */
     protected $request;
 
+    /** @var MockFilterable */
     protected $model;
 
+    /** @var Builder<MockFilterable> */
     protected $builder;
 
     protected function setUp(): void
@@ -48,14 +52,14 @@ class HandlesFilterablesTest extends TestCase
         {
             protected array $filters = ['name', 'status'];
 
-            protected function name($value): void
+            protected function name(string $value): void
             {
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
 
-            protected function status($value): void
+            protected function status(string $value): void
             {
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
         };
 
@@ -63,12 +67,12 @@ class HandlesFilterablesTest extends TestCase
         $filter->apply($this->builder);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify only one result matches (John Doe with active status)
         $this->assertCount(1, $results);
-        $this->assertEquals('John Doe', $results->first()->name);
-        $this->assertEquals('active', $results->first()->status);
+        $this->assertEquals('John Doe', $results->firstOrFail()->getAttribute('name'));
+        $this->assertEquals('active', $results->firstOrFail()->getAttribute('status'));
     }
 
     public function test_applies_filters_with_custom_method_mapping(): void
@@ -86,14 +90,14 @@ class HandlesFilterablesTest extends TestCase
                 'user_status' => 'filterByStatus',
             ];
 
-            protected function filterByName($value): void
+            protected function filterByName(string $value): void
             {
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
 
-            protected function filterByStatus($value): void
+            protected function filterByStatus(string $value): void
             {
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
         };
 
@@ -101,12 +105,12 @@ class HandlesFilterablesTest extends TestCase
         $filter->apply($this->builder);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify only one result matches (Jane Doe with inactive status)
         $this->assertCount(1, $results);
-        $this->assertEquals('Jane Doe', $results->first()->name);
-        $this->assertEquals('inactive', $results->first()->status);
+        $this->assertEquals('Jane Doe', $results->firstOrFail()->getAttribute('name'));
+        $this->assertEquals('inactive', $results->firstOrFail()->getAttribute('status'));
     }
 
     public function test_skips_empty_filters(): void
@@ -120,18 +124,19 @@ class HandlesFilterablesTest extends TestCase
             protected array $filters = ['name', 'status'];
 
             // Track which methods are called
-            public $called = [];
+            /** @var list<string> */
+            public array $called = [];
 
-            protected function name($value): void
+            protected function name(string $value): void
             {
                 $this->called[] = 'name';
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
 
-            protected function status($value): void
+            protected function status(string $value): void
             {
                 $this->called[] = 'status';
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
         };
 
@@ -143,9 +148,9 @@ class HandlesFilterablesTest extends TestCase
         $this->assertNotContains('name', $filter->called);
 
         // Verify the query returns only active records
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
         $this->assertCount(1, $results);
-        $this->assertEquals('active', $results->first()->status);
+        $this->assertEquals('active', $results->firstOrFail()->getAttribute('status'));
     }
 
     public function test_throws_exception_for_undefined_filter_method(): void
@@ -182,14 +187,14 @@ class HandlesFilterablesTest extends TestCase
         {
             protected array $filters = ['name', 'status'];
 
-            protected function name($value): void
+            protected function name(string $value): void
             {
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
 
-            protected function status($value): void
+            protected function status(string $value): void
             {
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
         };
 
@@ -201,12 +206,12 @@ class HandlesFilterablesTest extends TestCase
         $filter->apply($this->builder);
 
         // Execute query
-        $results = $filter->getBuilder()->get();
+        $results = $filter->requireBuilder()->get();
 
         // Verify only one result matches (Jane Doe with inactive status)
         $this->assertCount(1, $results);
-        $this->assertEquals('Jane Doe', $results->first()->name);
-        $this->assertEquals('inactive', $results->first()->status);
+        $this->assertEquals('Jane Doe', $results->firstOrFail()->getAttribute('name'));
+        $this->assertEquals('inactive', $results->firstOrFail()->getAttribute('status'));
     }
 
     public function test_gets_current_filters(): void
@@ -219,19 +224,19 @@ class HandlesFilterablesTest extends TestCase
         {
             protected array $filters = ['name', 'status', 'email'];
 
-            protected function name($value): void
+            protected function name(string $value): void
             {
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
 
-            protected function status($value): void
+            protected function status(string $value): void
             {
-                $this->getBuilder()->where('status', $value);
+                $this->resolveBuilder()->where('status', $value);
             }
 
-            protected function email($value): void
+            protected function email(string $value): void
             {
-                $this->getBuilder()->where('email', $value);
+                $this->resolveBuilder()->where('email', $value);
             }
         };
 
@@ -279,15 +284,16 @@ class HandlesFilterablesTest extends TestCase
             ];
 
             // Track applied filters
-            public $applied = [];
+            /** @var list<string> */
+            public array $applied = [];
 
-            protected function name($value): void
+            protected function name(string $value): void
             {
                 $this->applied[] = 'name';
-                $this->getBuilder()->where('name', 'LIKE', "%{$value}%");
+                $this->resolveBuilder()->where('name', 'LIKE', "%{$value}%");
             }
 
-            protected function customFilterMethod($value): void
+            protected function customFilterMethod(mixed $value): void
             {
                 $this->applied[] = 'custom_filter';
                 // No query modification needed for test
@@ -322,7 +328,7 @@ class HandlesFilterablesTest extends TestCase
         $collectionFilter = $filter->asCollectionFilter();
 
         // Verify it's a closure
-        $this->assertInstanceOf(\Closure::class, $collectionFilter);
+        $this->assertRuntimeInstanceOf(\Closure::class, $collectionFilter);
 
         // Create a test collection
         $collection = collect([

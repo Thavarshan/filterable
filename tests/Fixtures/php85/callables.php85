@@ -1,0 +1,35 @@
+<?php
+
+namespace Filterable\Tests\Fixtures\Php85;
+
+use Filterable\Attributes\AsFilter;
+use Filterable\Attributes\TransformWith;
+use Filterable\Filter;
+
+class CallableFilter extends Filter
+{
+    #[AsFilter('name'), TransformWith(static function (string $value): string { return $value |> trim(...) |> strtoupper(...); })]
+    protected function name(string $value): void
+    {
+        $this->getBuilder()->where('name', $value);
+    }
+}
+
+class FirstClassCallableFilter extends Filter
+{
+    #[AsFilter('name'), TransformWith(strtoupper(...))]
+    protected function name(string $value): void
+    {
+        $this->getBuilder()->where('name', $value);
+    }
+}
+
+function discardLazy(\Filterable\Filter $filter): void
+{
+    $filter->lazy();
+}
+
+function intentionallyDiscardLazy(\Filterable\Filter $filter): void
+{
+    (void) $filter->lazy();
+}
