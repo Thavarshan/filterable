@@ -60,6 +60,9 @@ class TenantCacheIsolationTest extends TestCase
             $this->assertSame($second->cacheKey(), $hit->cacheKey());
             $this->assertSame(['B'], $hit->get()->pluck('marker')->all());
             $this->assertSame(1, $hit->count());
+            $equivalent = $this->tenantFilter($modelConnection === null ? 'tenant' : null);
+            $this->assertSame($hit->cacheKey(), $equivalent->cacheKey(), 'Default and explicit aliases identify the same resolved connection');
+            $this->assertSame(['B'], $equivalent->get()->pluck('marker')->all());
             $this->assertSame([], DB::connection('tenant')->getQueryLog());
             DB::purge('tenant');
             config()->set('database.connections.tenant.password', 'rotated-secret');

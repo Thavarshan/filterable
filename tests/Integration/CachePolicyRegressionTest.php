@@ -6,15 +6,42 @@ use Filterable\Attributes\CachePolicy;
 use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\TestCase;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class CachePolicyRegressionTest extends TestCase
 {
+    /** @return array<string, array{class-string<CacheRegressionFilter>, bool}> */
+    public static function disabledResultPolicies(): array
+    {
+        return [
+            'attribute disable' => [CountOnlyRegressionFilter::class, false],
+            'runtime override of attribute enable' => [EnabledRegressionFilter::class, true],
+        ];
+    }
+
+    /** @param class-string<CacheRegressionFilter> $class */
+    #[DataProvider('disabledResultPolicies')]
+    public function test_disabled_results_never_call_the_cache_repository(string $class, bool $runtimeDisable): void
+    {
+        $cache = \Mockery::mock(Repository::class);
+        $cache->shouldNotReceive('remember', 'get', 'put', 'has', 'tags', 'supportsTags');
+        $filter = new $class(new Request, $cache);
+        if ($runtimeDisable) {
+            $filter->cacheResults(false);
+        }
+        $filter->apply(MockFilterable::query()->where('status', 'active')->where('is_visible', true));
+        $this->assertCount(1, $filter->get());
+        MockFilterable::factory()->create(['name' => 'BOB', 'status' => 'active', 'is_visible' => true]);
+        $this->assertCount(2, $filter->get());
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -212,3 +239,6 @@ class CountOnlyRegressionFilter extends CacheRegressionFilter {}
 
 #[CachePolicy(results: null)]
 class AutomaticRegressionFilter extends CacheRegressionFilter {}
+
+#[CachePolicy(results: true)]
+class EnabledRegressionFilter extends CacheRegressionFilter {}
