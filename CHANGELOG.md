@@ -1,6 +1,37 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v2.1.2...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/3.0.0...HEAD)
+
+## [v3.0.0](https://github.com/Thavarshan/filterable/compare/2.1.2...3.0.0) - 2026-10-29
+
+### Added
+
+- Optional `AsFilter`, `FilterFeatures`, `CachePolicy`, `FilterLimits`, `FilterRules`, `TransformWith`, `RequiresPermission` and `FilterComplexity` attributes, with immutable cached method definitions and request-specific rule/transformer services.
+- Laravel Gate authorization with independent actors and explicit guest/all/any/skip/reject behavior.
+- Native attributed Eloquent scope adapter, invokable query callback, portable attribute generators, and opt-in PHP 8.5 callable examples.
+- Optional Laravel 13 vector-search recipe and PostgreSQL pgvector integration tests without AI service dependencies.
+- PR compatibility coverage for PHP 8.3/8.4/8.5 and Laravel 11/12/13, lowest dependencies, actual MySQL/PostgreSQL/Redis jobs, maximum-level static analysis, and source coverage configuration.
+
+### Fixed
+
+- Filter application always applies predicates to the returned builder and performs no queries, even with caching enabled or cached results present.
+- A stable input snapshot preserves transformed values, denied inputs stay removed, and zero/false values remain valid. Programmatic inputs override request values; reset explicitly clears actor, row-scope and query/input state.
+- Terminal cache identity includes filter/model/connection/query/bindings and user/context information. Result and count invalidation use the same tagged store; unsupported tags never flush the whole store.
+- Cursor returns a real Generator by delegating to Eloquent's LazyCollection. Targeted PHP 8.5 NoDiscard diagnostics and verified PHP 8.3 Override hooks strengthen extension contracts.
+- Resolved all 1,100+ findings exposed by the original broken static-analysis configuration. Maximum-level analysis now passes across source and tests without a baseline or ignored-error list.
+
+### Breaking changes and migration
+
+- Programmatic filter inputs must be registered with `AsFilter`, `$filters` or `$filterMethodMap`; arbitrary helpers are no longer request-invocable.
+- Declared permissions no longer authorize guests automatically. The default legacy permission hook now consults Laravel Gate. Invalid definitions and authorization/complexity rejections fail explicitly.
+- `apply()` never populates a result cache. Use `$filter->get()`, `runQuery()` or `$filter->count()` for package caching; Eloquent builder `get()` executes normally.
+- The protected `applyFilterablesWithCache()` hook now returns void and only mutates the query. Customize terminal caching through `executeQueryWithCaching()`.
+- PHP 8.3+ and Laravel 11–13 support remain unchanged. Inline callable attributes require PHP 8.5 and remain isolated from older parsers.
+
+See the [migration and precedence guide](https://github.com/Thavarshan/filterable/blob/3.0.0/docs/attributes-and-migration.md) and [vector recipe](https://github.com/Thavarshan/filterable/blob/3.0.0/docs/vector-search.md).
+
+Implemented through [PR #50](https://github.com/Thavarshan/filterable/pull/50), covering #37 and #40–#49.
+
 
 ## [v2.1.2](https://github.com/Thavarshan/filterable/compare/v2.1.1...v2.1.2) - 2026-03-19
 
