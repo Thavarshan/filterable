@@ -25,6 +25,7 @@ This README is the complete usage guide. Examples below use an application `Post
 - [Permissions, Gate, and row scoping](#permissions-gate-and-row-scoping)
 - [Complexity limits and throttling](#complexity-limits-and-throttling)
 - [Result and count caching](#result-and-count-caching)
+- [Model filter attributes](#model-filter-attributes)
 - [Scopes and query callbacks](#scopes-and-query-callbacks)
 - [Prefilters and fluent query chains](#prefilters-and-fluent-query-chains)
 - [Query optimization](#query-optimization)
@@ -41,6 +42,7 @@ This README is the complete usage guide. Examples below use an application `Post
 | Capability | Requirements |
 | --- | --- |
 | Core filters, package attributes, existing properties/setters | PHP 8.3–8.5; Laravel 11, 12, or 13 |
+| Model `#[UseFilter]` attribute (no trait) | Laravel 11 through 13 |
 | Legacy model scope | Laravel 11–13 |
 | Native attributed model scope | Laravel 12+ |
 | Inline callable attribute arguments, pipe syntax, native NoDiscard warnings | PHP 8.5 |
@@ -120,37 +122,38 @@ class PostFilter extends Filter
 }
 ```
 
-Enable the legacy scope on your model:
+Connect the filter to your model with `#[UseFilter]` (no trait required):
 
 ```php
 <?php
 
 namespace App\Models;
 
-use Filterable\Traits\Filterable;
+use App\Filters\PostFilter;
+use Filterable\Attributes\UseFilter;
 use Illuminate\Database\Eloquent\Model;
 
+#[UseFilter(PostFilter::class)]
 class Post extends Model
 {
-    use Filterable;
+    //
 }
 ```
 
-Resolve the filter through a controller and return ordinary Eloquent results:
+Use the declared filter from your controller and return ordinary Eloquent results:
 
 ```php
 <?php
 
 namespace App\Http\Controllers;
 
-use App\Filters\PostFilter;
 use App\Models\Post;
 
 class PostController
 {
-    public function index(PostFilter $filter)
+    public function index()
     {
-        return Post::query()->filter($filter)->orderBy('id')->get();
+        return Post::query()->filter()->orderBy('id')->get();
     }
 }
 ```
@@ -625,6 +628,33 @@ $filter->clearRelatedCaches(Post::class);
 ```
 
 `clearRelatedCaches()` flushes the configured tag set; the model-class argument does not infer tags. Use tenant-specific tags for tenant-specific invalidation. Stores without tag support use ordinary untagged caching; `clearRelatedCaches()` then does nothing rather than flushing the whole store. The application owns invalidation when records, embeddings, or permissions change.
+
+## Model filter attributes
+
+On Laravel 11 through 13, `#[UseFilter(PostFilter::class)]` connects a model to its default filter without a model trait. Use `::class` to pass the class name. The package service provider registers the Eloquent `filter()` macro automatically.
+
+```php
+// Resolve the declared filter with the current request.
+$posts = Post::filter()->get();
+
+// Existing query constraints, eager loading, and pagination remain available.
+$posts = Post::where('is_available', true)->filter()->paginate(20);
+
+// Pass application-specific options without constructing a filter.
+$posts = Post::query()->filter(options: ['cache_context' => $tenantId])->get();
+
+// Override the default with a configured instance for this query.
+$filter = app(PostFilter::class)->appendFilterable('status', 'published');
+$posts = Post::filter($filter)->get();
+```
+
+The default filter is resolved through Laravel's container on every call. Keep filter bindings transient: they hold mutable state and must not be singleton or scoped bindings. Calling `filter()` only changes the query; `get()`, `count()`, or `paginate()` executes it. These are ordinary Eloquent terminal methods; package result caching still requires the filter's own terminal API.
+
+Subclasses inherit the nearest parent's `UseFilter` declaration. Add a new `#[UseFilter(OtherFilter::class)]` to override it. The declared class must implement `Filterable\Contracts\Filter` and be constructible through the container. Calling `filter()` on a model without the attribute or an existing filter scope throws a clear exception.
+
+Existing model filter scopes, including both Filterable traits below, take precedence over the attribute and retain their arguments and return values. Remove the trait when migrating to automatic attribute resolution. The provider preserves an already registered global `filter` macro; if another package defines one, resolve the filter explicitly and call `$filter->apply(Post::query())` or use `QueryFilter` below.
+
+For static analysis or IDEs that cannot discover runtime builder macros, a model PHPDoc such as `@method static \Illuminate\Database\Eloquent\Builder<static> filter(?\Filterable\Contracts\Filter $filter = null, ?array $options = [])` describes the static shortcut. Builder macro recognition depends on the analyzer's Laravel integration.
 
 ## Scopes and query callbacks
 
