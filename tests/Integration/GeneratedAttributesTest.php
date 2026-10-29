@@ -2,13 +2,40 @@
 
 namespace Filterable\Tests\Integration;
 
+use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 class GeneratedAttributesTest extends TestCase
 {
+    public function test_custom_attribute_stub_and_force_are_honored(): void
+    {
+        $stub = base_path('stubs/filter.attributes.basic.stub');
+        $path = app_path('Filters/CustomAttributesFilter.php');
+        File::ensureDirectoryExists(dirname($stub));
+        File::ensureDirectoryExists(dirname($path));
+        $contents = file_get_contents(__DIR__.'/../../src/Filterable/Console/stubs/filter.attributes.basic.stub');
+        $this->assertIsString($contents);
+        file_put_contents($stub, str_replace("where('name', \$value)", "where('name', 'custom')", $contents));
+        file_put_contents($path, '<?php // existing placeholder');
+        try {
+            $this->assertSame(0, Artisan::call('make:filter', [
+                'name' => 'CustomAttributesFilter', '--attributes' => true, '--basic' => true, '--force' => true,
+            ]));
+            require_once $path;
+            $class = 'App\\Filters\\CustomAttributesFilter';
+            $filter = app()->make($class, ['request' => new Request(['name' => 'input'])]);
+            $this->assertInstanceOf(Filter::class, $filter);
+            $this->assertSame(['custom'], $filter->apply(MockFilterable::query())->getBindings());
+        } finally {
+            unlink($stub);
+            unlink($path);
+        }
+    }
+
     public function test_generated_variants_load_and_execute(): void
     {
         MockFilterable::factory()->create(['name' => 'ALICE']);
@@ -35,7 +62,7 @@ class GeneratedAttributesTest extends TestCase
                     $request = new Request([$variant === 'model' ? 'search' : 'name' => 'ALICE']);
                     app()->instance(Request::class, $request);
                     $filter = app($class);
-                    $this->assertInstanceOf(\Filterable\Filter::class, $filter);
+                    $this->assertInstanceOf(Filter::class, $filter);
                     $query = $filter->apply(MockFilterable::query());
                     $this->assertSame([$variant === 'model' ? '%ALICE%' : 'ALICE'], $query->getBindings());
                     $this->assertCount(1, $query->get());

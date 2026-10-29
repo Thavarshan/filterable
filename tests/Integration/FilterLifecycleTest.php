@@ -5,6 +5,8 @@ namespace Filterable\Tests\Integration;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class FilterLifecycleTest extends TestCase
@@ -36,7 +38,7 @@ class FilterLifecycleTest extends TestCase
         ]);
         config()->set('filterable.defaults.cache.ttl', 30);
 
-        $request = new \Illuminate\Http\Request(['status' => 'active']);
+        $request = new Request(['status' => 'active']);
 
         $filter = new class($request, Cache::store('array')) extends TestFilter
         {
@@ -90,9 +92,9 @@ class FilterLifecycleTest extends TestCase
         $this->assertArrayHasKey('sql', $debug);
     }
 
-    protected function createMockUser(int $id): \Illuminate\Contracts\Auth\Authenticatable
+    protected function createMockUser(int $id): Authenticatable
     {
-        $user = new class($id) implements \Illuminate\Contracts\Auth\Authenticatable
+        $user = new class($id) implements Authenticatable
         {
             public function __construct(public int $identifier) {}
 

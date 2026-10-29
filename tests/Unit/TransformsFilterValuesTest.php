@@ -12,10 +12,10 @@ use ReflectionProperty;
 
 class TransformsFilterValuesTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Filterable\Tests\Fixtures\TestFilter */
+    /** @var TestFilter */
     protected $filter;
 
     protected function setUp(): void
@@ -187,7 +187,7 @@ class TransformsFilterValuesTest extends TestCase
         $filter->appendFilterable('name', 'john');
 
         // Create a mock builder
-        $builder = m::mock(\Illuminate\Database\Eloquent\Builder::class);
+        $builder = m::mock(Builder::class);
         $builder->shouldReceive('get')->andReturn(collect());
 
         // Apply the filter
@@ -207,6 +207,7 @@ class TransformsFilterValuesTest extends TestCase
 
             return array_map(function ($value) {
                 $this->assertIsString($value);
+
                 return strtoupper($value);
             }, $values);
         });

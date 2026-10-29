@@ -6,19 +6,20 @@ use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
 use Illuminate\Http\Request;
 use Mockery as m;
+use Mockery\MockInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use ReflectionProperty;
 
 class InteractsWithLoggingTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Psr\Log\LoggerInterface&\Mockery\MockInterface */
+    /** @var LoggerInterface&MockInterface */
     protected $logger;
 
-    /** @var \Filterable\Tests\Fixtures\TestFilter */
+    /** @var TestFilter */
     protected $filter;
 
     protected function setUp(): void
@@ -93,7 +94,7 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Test info message', ['key' => 'value']);
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Info was logged correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Info was logged correctly');
     }
 
     public function test_does_not_log_info_when_logging_disabled(): void
@@ -110,7 +111,7 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Test info message', ['key' => 'value']);
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Info was not logged when disabled');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Info was not logged when disabled');
     }
 
     public function test_logs_debug_when_logging_enabled(): void
@@ -129,7 +130,7 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Test debug message', ['key' => 'value']);
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Debug was logged correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Debug was logged correctly');
     }
 
     public function test_does_not_log_debug_when_logging_disabled(): void
@@ -146,7 +147,7 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Test debug message', ['key' => 'value']);
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Debug was not logged when disabled');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Debug was not logged when disabled');
     }
 
     public function test_logs_warning_when_logging_enabled(): void
@@ -165,7 +166,7 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Test warning message', ['key' => 'value']);
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Warning was logged correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Warning was logged correctly');
     }
 
     public function test_does_not_log_warning_when_logging_disabled(): void
@@ -182,7 +183,7 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Test warning message', ['key' => 'value']);
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Warning was not logged when disabled');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Warning was not logged when disabled');
     }
 
     public function test_logging_feature_controls_multiple_log_methods(): void
@@ -223,7 +224,7 @@ class InteractsWithLoggingTest extends TestCase
         $warningMethod->invoke($this->filter, 'Warning message 2', []);
 
         // Verify all mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Logging feature controls all log methods');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Logging feature controls all log methods');
     }
 
     public function test_logging_works_with_empty_context(): void
@@ -242,6 +243,6 @@ class InteractsWithLoggingTest extends TestCase
         $method->invoke($this->filter, 'Message with empty context');
 
         // Verify using mockery expectations
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Logging works with empty context');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Logging works with empty context');
     }
 }

@@ -9,19 +9,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Mockery as m;
+use Mockery\MockInterface;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use ReflectionProperty;
 
 class ValidatesFilterInputTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Filterable\Tests\Fixtures\TestFilter */
+    /** @var TestFilter */
     protected $filter;
 
-    /** @var \Psr\Log\LoggerInterface&\Mockery\MockInterface */
+    /** @var LoggerInterface&MockInterface */
     protected $logger;
 
     protected function setUp(): void
@@ -358,7 +359,7 @@ class ValidatesFilterInputTest extends TestCase
         $filter->enableFeature('validation');
 
         // Create a mock builder
-        $builder = m::mock(\Illuminate\Database\Eloquent\Builder::class);
+        $builder = m::mock(Builder::class);
         $builder->shouldReceive('get')->andReturn(collect());
 
         // Apply the filter

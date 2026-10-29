@@ -6,22 +6,25 @@ use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use Mockery as m;
+use Mockery\MockInterface;
 
 class ManagesMemoryTest extends TestCase
 {
-    /** @var \Illuminate\Contracts\Cache\Repository&\Mockery\MockInterface */
+    /** @var Repository&MockInterface */
     protected $cache;
 
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable> */
+    /** @var Builder<MockFilterable> */
     protected $builder;
 
-    /** @var \Filterable\Tests\Fixtures\TestFilter */
+    /** @var TestFilter */
     protected $filter;
 
     protected function setUp(): void
@@ -58,7 +61,7 @@ class ManagesMemoryTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
         $builderMock->shouldReceive('lazy')
             ->once()
             ->with(500)
@@ -81,7 +84,7 @@ class ManagesMemoryTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
         $builderMock->shouldReceive('lazy')
             ->once()
             ->with(500)
@@ -93,7 +96,7 @@ class ManagesMemoryTest extends TestCase
         // Get lazy collection
         $lazyCollection = $filter->lazy(500);
 
-        $this->assertRuntimeInstanceOf(\Illuminate\Support\LazyCollection::class, $lazyCollection);
+        $this->assertRuntimeInstanceOf(LazyCollection::class, $lazyCollection);
 
         // Count results
         $count = 0;
@@ -108,7 +111,7 @@ class ManagesMemoryTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
         $builderMock->shouldReceive('lazy')
             ->once()
             ->andReturn(MockFilterable::all()->lazy());
@@ -200,6 +203,7 @@ class ManagesMemoryTest extends TestCase
         // Reduce results to count records
         $count = $testFilter->reduce(function ($carry, $item) {
             $this->assertIsInt($carry);
+
             return $carry + 1;
         }, 0, 500);
 
@@ -210,7 +214,7 @@ class ManagesMemoryTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
 
         // Create a simple generator function that yields our test data
         $testGenerator = function () {
@@ -245,7 +249,7 @@ class ManagesMemoryTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
         $builderMock->shouldReceive('chunk')
             ->once()
             ->with(5, m::type('Closure'))
@@ -291,7 +295,7 @@ class ManagesMemoryTest extends TestCase
     public function test_stream_returns_lazy_collection_without_materialising(): void
     {
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
         $builderMock->shouldReceive('lazy')
             ->once()
             ->with(4)
@@ -302,7 +306,7 @@ class ManagesMemoryTest extends TestCase
 
         $stream = $filter->stream(4);
 
-        $this->assertRuntimeInstanceOf(\Illuminate\Support\LazyCollection::class, $stream);
+        $this->assertRuntimeInstanceOf(LazyCollection::class, $stream);
 
         $count = 0;
         foreach ($stream as $item) {
@@ -315,7 +319,7 @@ class ManagesMemoryTest extends TestCase
     public function test_stream_generator_yields_results_incrementally(): void
     {
         $builderMock = m::mock($this->builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
+        $this->assertInstanceOf(Builder::class, $builderMock);
         $builderMock->shouldReceive('lazy')
             ->once()
             ->with(3)

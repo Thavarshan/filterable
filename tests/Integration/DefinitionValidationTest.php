@@ -8,6 +8,7 @@ use Filterable\Attributes\CachePolicy;
 use Filterable\Attributes\FilterFeatures;
 use Filterable\Attributes\FilterRules;
 use Filterable\Attributes\TransformWith;
+use Filterable\Contracts\RuleFactory;
 use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\TestCase;
@@ -59,9 +60,13 @@ class DefinitionValidationTest extends TestCase
 
     public function test_unrelated_attributes_are_never_instantiated(): void
     {
-        $filter = new class(new Request(['status' => 'active'])) extends Filter {
+        $filter = new class(new Request(['status' => 'active'])) extends Filter
+        {
             #[AsFilter('status'), UnrelatedAttribute]
-            protected function status(string $value): void { $this->resolveBuilder()->where('status', $value); }
+            protected function status(string $value): void
+            {
+                $this->resolveBuilder()->where('status', $value);
+            }
         };
         $this->assertSame(['active'], $filter->apply(MockFilterable::query())->getBindings());
     }
@@ -78,7 +83,10 @@ class DefinitionValidationTest extends TestCase
 
 class PrivateHandlerFilter extends Filter
 {
-    public function callPrivate(string $value): void { $this->value($value); }
+    public function callPrivate(string $value): void
+    {
+        $this->value($value);
+    }
 
     #[AsFilter('value')]
     private function value(string $value): void {}
@@ -111,13 +119,19 @@ class EmptyAliasFilter extends Filter
 
 class DateTransformer
 {
-    public function __invoke(string $value): CarbonImmutable { return CarbonImmutable::parse($value); }
+    public function __invoke(string $value): CarbonImmutable
+    {
+        return CarbonImmutable::parse($value);
+    }
 }
 
-class DateRuleFactory implements \Filterable\Contracts\RuleFactory
+class DateRuleFactory implements RuleFactory
 {
     /** @return list<string> */
-    public function __invoke(Request $request): array { return ['date', 'date_format:Y-m-d']; }
+    public function __invoke(Request $request): array
+    {
+        return ['date', 'date_format:Y-m-d'];
+    }
 }
 
 class DateAttributeFilter extends Filter
@@ -135,7 +149,10 @@ class DateAttributeFilter extends Filter
 #[\Attribute(\Attribute::TARGET_METHOD)]
 class UnrelatedAttribute
 {
-    public function __construct() { throw new \LogicException('Do not instantiate unrelated metadata.'); }
+    public function __construct()
+    {
+        throw new \LogicException('Do not instantiate unrelated metadata.');
+    }
 }
 
 #[FilterFeatures(['caching' => false])]

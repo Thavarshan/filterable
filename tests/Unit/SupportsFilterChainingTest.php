@@ -2,23 +2,25 @@
 
 namespace Filterable\Tests\Unit;
 
+use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Mockery as m;
+use Mockery\MockInterface;
 use ReflectionMethod;
 use ReflectionProperty;
 
 class SupportsFilterChainingTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable>&\Mockery\MockInterface */
+    /** @var Builder<MockFilterable>&MockInterface */
     protected $builder;
 
-    /** @var \Filterable\Tests\Fixtures\TestFilter */
+    /** @var TestFilter */
     protected $filter;
 
     protected function setUp(): void
@@ -204,7 +206,7 @@ class SupportsFilterChainingTest extends TestCase
         $applyCustomFiltersMethod->invoke($this->filter);
 
         // Verify that the builder methods were called (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Custom filters were applied to query');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Custom filters were applied to query');
     }
 
     public function test_where_applies_correct_query(): void
@@ -228,7 +230,7 @@ class SupportsFilterChainingTest extends TestCase
         $customFilters[0]($this->builder);
 
         // Verify that the builder method was called correctly (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Where clause was applied correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Where clause was applied correctly');
     }
 
     public function test_where_in_applies_correct_query(): void
@@ -252,7 +254,7 @@ class SupportsFilterChainingTest extends TestCase
         $customFilters[0]($this->builder);
 
         // Verify that the builder method was called correctly (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'WhereIn clause was applied correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'WhereIn clause was applied correctly');
     }
 
     public function test_where_not_in_applies_correct_query(): void
@@ -276,7 +278,7 @@ class SupportsFilterChainingTest extends TestCase
         $customFilters[0]($this->builder);
 
         // Verify that the builder method was called correctly (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'WhereNotIn clause was applied correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'WhereNotIn clause was applied correctly');
     }
 
     public function test_where_between_applies_correct_query(): void
@@ -300,7 +302,7 @@ class SupportsFilterChainingTest extends TestCase
         $customFilters[0]($this->builder);
 
         // Verify that the builder method was called correctly (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'WhereBetween clause was applied correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'WhereBetween clause was applied correctly');
     }
 
     public function test_order_by_applies_correct_query(): void
@@ -324,7 +326,7 @@ class SupportsFilterChainingTest extends TestCase
         $customFilters[0]($this->builder);
 
         // Verify that the builder method was called correctly (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'OrderBy clause was applied correctly');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'OrderBy clause was applied correctly');
     }
 
     public function test_custom_filters_applied_during_filter_application(): void
@@ -359,7 +361,7 @@ class SupportsFilterChainingTest extends TestCase
         $filter->apply($builder);
 
         // Verify that the builder methods were called (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Custom filters were applied during filter application');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Custom filters were applied during filter application');
     }
 
     public function test_custom_filters_not_applied_when_feature_disabled(): void
@@ -387,6 +389,6 @@ class SupportsFilterChainingTest extends TestCase
         $filter->apply($builder);
 
         // Verify that the builder methods were not called (via Mockery expectations)
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Custom filters were not applied when feature was disabled');
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount(), 'Custom filters were not applied when feature was disabled');
     }
 }

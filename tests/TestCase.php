@@ -4,6 +4,7 @@ namespace Filterable\Tests;
 
 use Filterable\Providers\FilterableServiceProvider;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -15,8 +16,10 @@ class TestCase extends BaseTestCase
 
     /**
      * Runtime contract assertions intentionally verify the declared type.
+     *
      * @template T of object
-     * @param class-string<T> $class
+     *
+     * @param  class-string<T>  $class
      */
     protected function assertRuntimeInstanceOf(string $class, mixed $value): void
     {
@@ -75,7 +78,7 @@ class TestCase extends BaseTestCase
      */
     protected function setUpDatabase(Application $app): void
     {
-        $schemaBuilder = $app->make(\Illuminate\Database\DatabaseManager::class)->connection()->getSchemaBuilder();
+        $schemaBuilder = $app->make(DatabaseManager::class)->connection()->getSchemaBuilder();
 
         $schemaBuilder->dropIfExists('migrations');
         $schemaBuilder->dropIfExists('mocks');

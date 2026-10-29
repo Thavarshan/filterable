@@ -4,6 +4,7 @@ namespace Filterable\Tests\Integration;
 
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\TestCase;
+use Illuminate\Cache\RedisStore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class ServiceIntegrationTest extends TestCase
         config()->set('database.redis.client', 'phpredis');
         config()->set('cache.stores.filterable_redis', ['driver' => 'redis', 'connection' => 'default']);
         $cache = Cache::store('filterable_redis');
-        $this->assertRuntimeInstanceOf(\Illuminate\Cache\RedisStore::class, $cache->getStore());
+        $this->assertRuntimeInstanceOf(RedisStore::class, $cache->getStore());
         MockFilterable::factory()->create(['name' => 'ALICE', 'status' => 'active']);
         MockFilterable::factory()->create(['name' => 'BOB', 'status' => 'inactive']);
         $tag = 'filterable-service-'.bin2hex(random_bytes(8));

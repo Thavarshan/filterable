@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 class MockFilterable extends Model
 {
     use Filterable;
+
     /** @use HasFactory<MockFilterableFactory> */
     use HasFactory;
 

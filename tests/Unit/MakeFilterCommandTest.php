@@ -4,17 +4,19 @@ namespace Filterable\Tests\Unit;
 
 use Filterable\Tests\TestCase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Testing\PendingCommand;
 
 class MakeFilterCommandTest extends TestCase
 {
     /** @param array<string, mixed> $parameters */
-    private function filterCommand(string $command, array $parameters): \Illuminate\Testing\PendingCommand
+    private function filterCommand(string $command, array $parameters): PendingCommand
     {
         $pending = $this->artisan($command, $parameters);
-        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $pending);
+        $this->assertInstanceOf(PendingCommand::class, $pending);
 
         return $pending;
     }
+
     protected function setUp(): void
     {
         parent::setUp();

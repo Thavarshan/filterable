@@ -13,6 +13,7 @@ use Filterable\Tests\Fixtures\MockTestFilter;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
 use Illuminate\Cache\RateLimiter;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,12 +21,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 use Mockery as m;
+use Mockery\MockInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 class FilterTest extends TestCase
 {
-    /** @var Repository&\Mockery\MockInterface */
+    /** @var Repository&MockInterface */
     protected Repository $cache;
 
     protected LoggerInterface $logger;
@@ -265,7 +267,7 @@ class FilterTest extends TestCase
         {
             public bool $wasCalled = false;
 
-            /** @return \Illuminate\Database\Eloquent\Collection<int, MockFilterable> */
+            /** @return Collection<int, MockFilterable> */
             public function mockExecuteQueryWithMemoryManagement(): Collection
             {
                 $this->wasCalled = true;
@@ -328,6 +330,7 @@ class FilterTest extends TestCase
             protected function checkRateLimits(): bool
             {
                 $this->methodsCalled[] = 'checkRateLimits';
+
                 return parent::checkRateLimits();
             }
 
@@ -606,7 +609,7 @@ class FilterTest extends TestCase
             }
         };
 
-        $user = m::mock(\Illuminate\Contracts\Auth\Authenticatable::class);
+        $user = m::mock(Authenticatable::class);
         $user->shouldReceive('getAuthIdentifierName')->andReturn('id');
         $user->shouldReceive('getAuthIdentifier')->andReturn(99);
 

@@ -9,18 +9,19 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Mockery as m;
+use Mockery\MockInterface;
 use ReflectionMethod;
 use ReflectionProperty;
 
 class HandlesRateLimitingTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Filterable\Tests\Fixtures\TestFilter */
+    /** @var TestFilter */
     protected $filter;
 
-    /** @var \Illuminate\Cache\RateLimiter&\Mockery\MockInterface */
+    /** @var RateLimiter&MockInterface */
     protected $rateLimiter;
 
     protected function setUp(): void

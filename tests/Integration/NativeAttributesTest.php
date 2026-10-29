@@ -2,21 +2,27 @@
 
 namespace Filterable\Tests\Integration;
 
+use Filterable\Attributes\AsFilter;
 use Filterable\Filter;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\TestCase;
+use Filterable\Traits\AttributeFilterable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class NativeAttributesTest extends TestCase
 {
     public function test_optional_native_scope_matches_legacy_scope(): void
     {
-        if (! class_exists(\Illuminate\Database\Eloquent\Attributes\Scope::class)) {
+        if (! class_exists(Scope::class)) {
             $this->markTestSkipped('Attributed Eloquent scopes require Laravel 12+.');
         }
         MockFilterable::factory()->create(['name' => 'ALICE', 'status' => 'active']);
-        $model = new class extends \Illuminate\Database\Eloquent\Model {
-            use \Filterable\Traits\AttributeFilterable;
+        $model = new class extends Model
+        {
+            use AttributeFilterable;
+
             protected $table = 'mocks';
         };
         $a = $model->newQuery()->filter(new AttributedLifecycleFilter(new Request(['status' => 'active'])));
@@ -40,15 +46,19 @@ class NativeAttributesTest extends TestCase
             $this->assertCount(1, $filter->get());
         }
         $warnings = [];
-        set_error_handler(function ($severity, $message) use (&$warnings) { $warnings[] = $message; return true; });
+        set_error_handler(function ($severity, $message) use (&$warnings) {
+            $warnings[] = $message;
+
+            return true;
+        });
         try {
             $discard = 'Filterable\\Tests\\Fixtures\\Php85\\discardLazy';
-            
+
             $discard($filter);
             $this->assertCount(1, $warnings);
             $this->assertStringContainsString('return value', strtolower($warnings[0]));
             $intentional = 'Filterable\\Tests\\Fixtures\\Php85\\intentionallyDiscardLazy';
-            
+
             $intentional($filter);
             $this->assertCount(1, $warnings);
         } finally {
@@ -74,11 +84,17 @@ class NativeAttributesTest extends TestCase
 class CurrentRequestController
 {
     /** @return array<string, mixed> */
-    public function __invoke(CurrentRequestFilter $filter): array { return $filter->getFilterables(); }
+    public function __invoke(CurrentRequestFilter $filter): array
+    {
+        return $filter->getFilterables();
+    }
 }
 
 class CurrentRequestFilter extends Filter
 {
-    #[\Filterable\Attributes\AsFilter('name')]
-    protected function name(string $value): void { $this->resolveBuilder()->where('name', $value); }
+    #[AsFilter('name')]
+    protected function name(string $value): void
+    {
+        $this->resolveBuilder()->where('name', $value);
+    }
 }

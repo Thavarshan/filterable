@@ -4,13 +4,14 @@ namespace Filterable\Tests\Fixtures;
 
 use Filterable\Filter;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Psr\Log\LoggerInterface;
 
 class TestFilter extends Filter
 {
     /** @return \Illuminate\Database\Eloquent\Builder<*> */
-    public function requireBuilder(): \Illuminate\Database\Eloquent\Builder
+    public function requireBuilder(): Builder
     {
         return $this->resolveBuilder();
     }

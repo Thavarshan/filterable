@@ -97,7 +97,7 @@ class FilterDependencyInjectionTest extends TestCase
     public function test_filter_resolved_with_multiple_parameters(): void
     {
         // Simulate a request with multiple filter parameters
-        app(\Illuminate\Http\Request::class)->merge([
+        app(Request::class)->merge([
             'name' => 'J',
             'email' => 'example.com',
         ]);
@@ -117,7 +117,7 @@ class FilterDependencyInjectionTest extends TestCase
     public function test_filter_resolved_via_controller_style_injection(): void
     {
         // Simulate a request with filter parameters
-        app(\Illuminate\Http\Request::class)->merge([
+        app(Request::class)->merge([
             'name' => 'Jane',
         ]);
 
@@ -142,7 +142,7 @@ class FilterDependencyInjectionTest extends TestCase
     public function test_filter_works_correctly_when_request_is_empty(): void
     {
         // Ensure request has no filter parameters
-        app(\Illuminate\Http\Request::class)->replace([]);
+        app(Request::class)->replace([]);
 
         // Resolve the filter from the DI container
         $filter = app()->make(MockFilter::class);
@@ -323,7 +323,7 @@ class FilterDependencyInjectionTest extends TestCase
         app()->instance(Request::class, $request);
 
         // Method 1: Manual instantiation (always worked)
-        $manualFilter = new MockFilter(app(\Illuminate\Http\Request::class));
+        $manualFilter = new MockFilter(app(Request::class));
         $manualResults = MockFilterable::query()->filter($manualFilter)->get();
 
         // Method 2: DI container resolution (was broken before fix)

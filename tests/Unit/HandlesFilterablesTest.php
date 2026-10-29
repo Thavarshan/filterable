@@ -6,17 +6,18 @@ use BadMethodCallException;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class HandlesFilterablesTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Filterable\Tests\Fixtures\MockFilterable */
+    /** @var MockFilterable */
     protected $model;
 
-    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable> */
+    /** @var Builder<MockFilterable> */
     protected $builder;
 
     protected function setUp(): void

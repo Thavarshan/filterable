@@ -2,7 +2,6 @@
 
 namespace Filterable\Tests\Integration;
 
-use Carbon\CarbonImmutable;
 use Filterable\Attributes\AsFilter;
 use Filterable\Attributes\CachePolicy;
 use Filterable\Attributes\FilterComplexity;
@@ -18,12 +17,16 @@ use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\TestCase;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\GenericUser;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Mockery\MockInterface;
 
 class ModernizationTest extends TestCase
 {
@@ -98,7 +101,7 @@ class ModernizationTest extends TestCase
 
     public function test_gate_denials_guests_and_actor_separate_from_row_scope(): void
     {
-        Gate::define('sensitive', fn (\Illuminate\Contracts\Auth\Authenticatable $user) => $user->getAuthIdentifier() === 100);
+        Gate::define('sensitive', fn (Authenticatable $user) => $user->getAuthIdentifier() === 100);
         foreach ([null, new GenericUser(['id' => 200]), new GenericUser(['id' => 100])] as $actor) {
             $filter = new PermissionFilter(Request::create('/?status=active'));
             $filter->authorizeFor($actor)->enableFeature('caching')->cacheResults();
@@ -113,9 +116,13 @@ class ModernizationTest extends TestCase
 
     public function test_permission_rejection_cannot_be_swallowed(): void
     {
-        $filter = new class(Request::create('/?status=active')) extends Filter {
+        $filter = new class(Request::create('/?status=active')) extends Filter
+        {
             #[AsFilter('status'), RequiresPermission('sensitive', reject: true)]
-            protected function status(string $value): void { $this->resolveBuilder()->where('status', $value); }
+            protected function status(string $value): void
+            {
+                $this->resolveBuilder()->where('status', $value);
+            }
         };
         $query = MockFilterable::query();
         try {
@@ -131,20 +138,36 @@ class ModernizationTest extends TestCase
         Gate::define('allow', fn () => true);
         Gate::define('deny', fn () => false);
         $actor = new GenericUser(['id' => 100]);
-        $filter = new class(new Request(['any' => 'active', 'all' => 'inactive'])) extends Filter {
+        $filter = new class(new Request(['any' => 'active', 'all' => 'inactive'])) extends Filter
+        {
             #[AsFilter('any'), RequiresPermission(['allow', 'deny'], any: true)]
-            protected function any(string $value): void { $this->resolveBuilder()->where('status', $value); }
+            protected function any(string $value): void
+            {
+                $this->resolveBuilder()->where('status', $value);
+            }
+
             #[AsFilter('all'), RequiresPermission(['allow', 'deny'])]
-            protected function all(string $value): void { $this->resolveBuilder()->where('status', $value); }
+            protected function all(string $value): void
+            {
+                $this->resolveBuilder()->where('status', $value);
+            }
         };
         $this->assertSame(['active'], $filter->authorizeFor($actor)->apply(MockFilterable::query())->getBindings());
 
-        $filter = new class(new Request(['names' => 'ALICE,BOB'])) extends Filter {
+        $filter = new class(new Request(['names' => 'ALICE,BOB'])) extends Filter
+        {
             /** @param list<string> $value */
             #[AsFilter('names'), TransformWith([self::class, 'split']), FilterComplexity(3)]
-            protected function names(array $value): void { $this->resolveBuilder()->whereIn('name', $value); }
+            protected function names(array $value): void
+            {
+                $this->resolveBuilder()->whereIn('name', $value);
+            }
+
             /** @return list<string> */
-            public static function split(string $value): array { return explode(',', $value); }
+            public static function split(string $value): array
+            {
+                return explode(',', $value);
+            }
         };
         $filter->setMaxComplexity(5);
         $this->expectException(AuthorizationException::class);
@@ -191,8 +214,8 @@ class ModernizationTest extends TestCase
 
     public function test_disabled_cache_never_touches_store_or_queries_during_apply(): void
     {
-        /** @var \Illuminate\Contracts\Cache\Repository&\Mockery\MockInterface $store */
-        $store = \Mockery::mock(\Illuminate\Contracts\Cache\Repository::class);
+        /** @var Repository&MockInterface $store */
+        $store = \Mockery::mock(Repository::class);
         $store->shouldNotReceive('remember', 'get', 'put');
         $filter = new AttributedLifecycleFilter(new Request(['name' => 'alice']), $store);
         DB::enableQueryLog();
@@ -209,17 +232,26 @@ class ModernizationTest extends TestCase
         $this->assertSame($first, DefinitionRegistry::forClass(AttributedLifecycleFilter::class));
         $request = new Request(['status' => 'active']);
         $attributed = new AttributedLifecycleFilter($request);
-        $legacy = new class($request) extends Filter {
+        $legacy = new class($request) extends Filter
+        {
             protected array $filters = ['status'];
-            protected function status(string $value): void { $this->resolveBuilder()->where('status', $value); }
+
+            protected function status(string $value): void
+            {
+                $this->resolveBuilder()->where('status', $value);
+            }
         };
         $a = $attributed->apply(MockFilterable::query());
         $b = $legacy->apply(MockFilterable::query());
         $this->assertSame($a->toSql(), $b->toSql());
         $this->assertSame($a->getBindings(), $b->getBindings());
         $this->assertSame($a->pluck('id')->all(), $b->pluck('id')->all());
-        $child = new class(new Request(['name' => 'alice'])) extends AttributedLifecycleFilter {
-            protected function name(string $value): void { $this->resolveBuilder()->where('name', 'BOB'); }
+        $child = new class(new Request(['name' => 'alice'])) extends AttributedLifecycleFilter
+        {
+            protected function name(string $value): void
+            {
+                $this->resolveBuilder()->where('name', 'BOB');
+            }
         };
         $this->assertSame([], $child->apply(MockFilterable::query())->getBindings(), 'Overriding without AsFilter unregisters the inherited method');
     }
@@ -227,9 +259,11 @@ class ModernizationTest extends TestCase
     public function test_duplicate_alias_and_invalid_signature_fail_before_query_mutation(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new class(new Request) extends Filter {
+        new class(new Request) extends Filter
+        {
             #[AsFilter('same')]
             protected function one(string $value): void {}
+
             #[AsFilter('same')]
             protected function two(string $value): void {}
         };
@@ -247,10 +281,13 @@ class ModernizationTest extends TestCase
             $this->assertSame([], $query->getBindings());
         }
         $this->expectException(InvalidArgumentException::class);
-        new class(new Request) extends Filter {
+        new class(new Request) extends Filter
+        {
             protected array $filterMethodMap = ['name' => 'other'];
+
             #[AsFilter('name')]
             protected function name(string $value): void {}
+
             protected function other(string $value): void {}
         };
     }
@@ -263,7 +300,7 @@ class ModernizationTest extends TestCase
         $this->assertRuntimeInstanceOf(\Generator::class, $filter->cursor());
         $names = [];
         foreach ($filter->cursor() as $row) {
-            $this->assertInstanceOf(\Illuminate\Database\Eloquent\Model::class, $row);
+            $this->assertInstanceOf(Model::class, $row);
             $names[] = $row->getAttribute('name');
         }
         $this->assertSame(['ALICE'], $names);
@@ -273,7 +310,10 @@ class ModernizationTest extends TestCase
 trait StatusHandler
 {
     #[AsFilter('status')]
-    protected function status(string $value): void { $this->resolveBuilder()->where('status', $value); }
+    protected function status(string $value): void
+    {
+        $this->resolveBuilder()->where('status', $value);
+    }
 }
 
 class AttributedLifecycleFilter extends Filter
@@ -281,21 +321,36 @@ class AttributedLifecycleFilter extends Filter
     use StatusHandler;
 
     #[AsFilter('name'), FilterRules(['string']), TransformWith('strtoupper')]
-    protected function name(string $value): void { $this->resolveBuilder()->where('name', $value); }
+    protected function name(string $value): void
+    {
+        $this->resolveBuilder()->where('name', $value);
+    }
 
     #[AsFilter('age'), FilterRules(['integer'])]
-    protected function age(mixed $value): void { $this->resolveBuilder()->where('age', $value); }
+    protected function age(mixed $value): void
+    {
+        $this->resolveBuilder()->where('age', $value);
+    }
 
     #[AsFilter('visible')]
-    protected function visible(bool $value): void { $this->resolveBuilder()->where('is_visible', $value); }
+    protected function visible(bool $value): void
+    {
+        $this->resolveBuilder()->where('is_visible', $value);
+    }
 
-    public function helper(string $value): void { throw new \LogicException('Helper must never be request-invocable'); }
+    public function helper(string $value): void
+    {
+        throw new \LogicException('Helper must never be request-invocable');
+    }
 }
 
 class PermissionFilter extends Filter
 {
     #[AsFilter('status'), RequiresPermission('sensitive')]
-    protected function status(string $value): void { $this->resolveBuilder()->where('status', $value); }
+    protected function status(string $value): void
+    {
+        $this->resolveBuilder()->where('status', $value);
+    }
 }
 
 #[CachePolicy(ttlMinutes: 8), FilterLimits(maxFilters: 4)]

@@ -12,11 +12,13 @@ use RuntimeException;
 class MockTestFilter extends Filter
 {
     protected ?string $failureReason = null;
+
     /**
      * Apply the filter to a builder instance.
-      * @param \Illuminate\Database\Eloquent\Builder<*> $builder
-      * @param array<string, mixed>|null $options
-      * @return \Illuminate\Database\Eloquent\Builder<*>
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $builder
+     * @param  array<string, mixed>|null  $options
+     * @return \Illuminate\Database\Eloquent\Builder<*>
      */
     public function apply(Builder $builder, ?array $options = []): Builder
     {
@@ -46,7 +48,8 @@ class MockTestFilter extends Filter
 
     /**
      * Get the query results with proper handling based on enabled features.
-      * @return \Illuminate\Database\Eloquent\Collection<*, *>
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<*, *>
      */
     public function get(): Collection
     {
@@ -67,7 +70,8 @@ class MockTestFilter extends Filter
 
     /**
      * Public method that exposes the protected executeQueryWithMemoryManagement method
-      * @return \Illuminate\Database\Eloquent\Collection<*, *>
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<*, *>
      */
     public function mockExecuteQueryWithMemoryManagement(): Collection
     {

@@ -12,17 +12,18 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Mockery as m;
+use Mockery\MockInterface;
 use ReflectionMethod;
 
 class CachingTest extends TestCase
 {
-    /** @var \Illuminate\Contracts\Cache\Repository&\Mockery\MockInterface */
+    /** @var Repository&MockInterface */
     protected $cache;
 
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable> */
+    /** @var Builder<MockFilterable> */
     protected $builder;
 
     protected function setUp(): void
@@ -155,7 +156,7 @@ class CachingTest extends TestCase
         $filter->clearCache();
 
         // The assertion is in the mock expectation
-        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount());
+        $this->assertGreaterThan(0, m::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_enables_and_disables_caching_per_instance(): void
@@ -224,7 +225,7 @@ class CachingTest extends TestCase
             protected Builder $testBuilder;
 
             /** @param Builder<*> $testBuilder */
-            public function __construct(Request $request, \Illuminate\Contracts\Cache\Repository $cache, Builder $testBuilder)
+            public function __construct(Request $request, Repository $cache, Builder $testBuilder)
             {
                 parent::__construct($request, $cache);
                 $this->testBuilder = $testBuilder;
@@ -241,7 +242,7 @@ class CachingTest extends TestCase
 
             // Override apply to set our builder
             /** @param Builder<*> $builder
-             * @param array<string, mixed>|null $options
+             * @param  array<string, mixed>|null  $options
              * @return Builder<*>
              */
             public function apply($builder, ?array $options = []): Builder
@@ -255,7 +256,7 @@ class CachingTest extends TestCase
 
         // Mock the builder so we can verify it was called
         $builderSpy = m::mock($builder)->makePartial();
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderSpy);
+        $this->assertInstanceOf(Builder::class, $builderSpy);
         $builderSpy->shouldReceive('get')
             ->never() // Should not be called directly because we're returning from executeQueryWithCaching
             ->andReturn(collect());

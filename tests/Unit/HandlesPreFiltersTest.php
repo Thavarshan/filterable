@@ -6,6 +6,7 @@ use Closure;
 use Filterable\Tests\Fixtures\MockFilterable;
 use Filterable\Tests\Fixtures\TestFilter;
 use Filterable\Tests\TestCase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Mockery;
 use Psr\Log\LoggerInterface;
@@ -13,13 +14,13 @@ use ReflectionProperty;
 
 class HandlesPreFiltersTest extends TestCase
 {
-    /** @var \Illuminate\Http\Request */
+    /** @var Request */
     protected $request;
 
-    /** @var \Filterable\Tests\Fixtures\MockFilterable */
+    /** @var MockFilterable */
     protected $model;
 
-    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable> */
+    /** @var Builder<MockFilterable> */
     protected $builder;
 
     protected function setUp(): void
@@ -59,7 +60,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter = new TestFilter($this->request);
 
         // Register a pre-filter
-        $result = $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $result = $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -107,7 +108,7 @@ class HandlesPreFiltersTest extends TestCase
         };
 
         // Register a pre-filter
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -134,7 +135,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter = new TestFilter($this->request);
 
         // Register a pre-filter that only shows visible records
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -165,7 +166,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter->disableFeature('logging');
 
         // Register a pre-filter
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -196,7 +197,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter->enableFeature('logging');
 
         // Register a pre-filter
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
@@ -246,7 +247,7 @@ class HandlesPreFiltersTest extends TestCase
         };
 
         // Register a pre-filter
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('status', 'active');
         });
 
@@ -268,7 +269,7 @@ class HandlesPreFiltersTest extends TestCase
         $filter = new TestFilter($this->request);
 
         // Register a complex pre-filter with multiple conditions
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where(function ($q) {
                 $q->where('status', 'active')
                     ->orWhere('name', 'LIKE', '%Jane%');
@@ -318,7 +319,7 @@ class HandlesPreFiltersTest extends TestCase
         };
 
         // Register a pre-filter
-        $filter->registerPreFilters(function (\Illuminate\Database\Eloquent\Builder $query) {
+        $filter->registerPreFilters(function (Builder $query) {
             return $query->where('is_visible', true);
         });
 
