@@ -1,6 +1,27 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v3.2.0...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/3.2.0...HEAD)
+
+## [v3.2.0](https://github.com/Thavarshan/filterable/compare/3.1.0...3.2.0) - 2026-10-29
+
+### Added
+
+- Connect an Eloquent model to its default filter without a trait using `#[UseFilter(PostFilter::class)]`, then call `Post::filter()` or chain `filter()` onto an existing query.
+- Resolve the declared filter through Laravel's container for each invocation, using the current request. Support named options, explicit filter instance overrides, inherited declarations, and child-model overrides.
+- Preserve query scope grouping and the existing model/builder without executing queries during filter application. Existing named filter scopes, their arguments and return values, and previously registered global filter macros retain precedence.
+- Fail clearly for missing or invalid model declarations and invalid filter/options arguments.
+- Update the README quick start to use trait-free models and automatic request resolution. Document inheritance, overrides, options, migration, macro conflicts, static analysis annotations, and terminal caching behavior.
+
+### Compatibility and validation
+
+- PHP 8.3+ and Laravel 11-13 remain supported. Existing `Filterable` and `AttributeFilterable` model traits remain available.
+- Local validation: 235 tests, 734 assertions, 5 expected version/service-dependent skips; lint passed; maximum-level static analysis passed without a baseline.
+- PR CI passed all nine PHP/Laravel combinations, lowest dependencies, MySQL/Redis, PostgreSQL/pgvector/Redis, lint/static analysis, and CodeQL.
+- Regression coverage includes request changes, fresh filter resolution, inherited and overridden declarations, named options, explicit overrides, legacy/native/custom scopes, external macros, query execution/pagination, invalid declarations, and OR grouping. The actual README quick start runs in the test suite.
+
+Implemented in [PR #55](https://github.com/Thavarshan/filterable/pull/55).
+
+**Full changelog:** https://github.com/Thavarshan/filterable/compare/3.1.0...3.2.0
 
 ## [v3.1.0](https://github.com/Thavarshan/filterable/compare/3.0.0...3.1.0) - 2026-10-29
 
@@ -311,24 +332,3 @@ Implemented through [PR #50](https://github.com/Thavarshan/filterable/pull/50), 
 ## v1.0.0 - 2024-04-10
 
 Initial release.
-
-## [v3.2.0](https://github.com/Thavarshan/filterable/compare/3.1.0...v3.2.0) - 2026-10-29
-
-### Added
-
-- Connect an Eloquent model to its default filter without a trait using `#[UseFilter(PostFilter::class)]`, then call `Post::filter()` or chain `filter()` onto an existing query.
-- Resolve the declared filter through Laravel's container for each invocation, using the current request. Support named options, explicit filter instance overrides, inherited declarations, and child-model overrides.
-- Preserve query scope grouping and the existing model/builder without executing queries during filter application. Existing named filter scopes, their arguments and return values, and previously registered global filter macros retain precedence.
-- Fail clearly for missing or invalid model declarations and invalid filter/options arguments.
-- Update the README quick start to use trait-free models and automatic request resolution. Document inheritance, overrides, options, migration, macro conflicts, static analysis annotations, and terminal caching behavior.
-
-### Compatibility and validation
-
-- PHP 8.3+ and Laravel 11-13 remain supported. Existing `Filterable` and `AttributeFilterable` model traits remain available.
-- Local validation: 235 tests, 734 assertions, 5 expected version/service-dependent skips; lint passed; maximum-level static analysis passed without a baseline.
-- PR CI passed all nine PHP/Laravel combinations, lowest dependencies, MySQL/Redis, PostgreSQL/pgvector/Redis, lint/static analysis, and CodeQL.
-- Regression coverage includes request changes, fresh filter resolution, inherited and overridden declarations, named options, explicit overrides, legacy/native/custom scopes, external macros, query execution/pagination, invalid declarations, and OR grouping. The actual README quick start runs in the test suite.
-
-Implemented in [PR #55](https://github.com/Thavarshan/filterable/pull/55).
-
-**Full changelog:** https://github.com/Thavarshan/filterable/compare/3.1.0...3.2.0
