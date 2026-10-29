@@ -151,6 +151,10 @@ class TransformsFilterValuesTest extends TestCase
         // Create a filter that exposes the transformation process
         $filter = new class($this->request) extends TestFilter
         {
+            protected array $filters = ['name'];
+
+            protected function name(mixed $value): void {}
+
             public $transformedValues = [];
 
             protected function transformFilterValues(): void
@@ -271,6 +275,10 @@ class TransformsFilterValuesTest extends TestCase
         // Create a filter that exposes the transformation process
         $filter = new class($this->request) extends TestFilter
         {
+            protected array $filters = ['name'];
+
+            protected function name(mixed $value): void {}
+
             public $transformCalled = false;
 
             protected function transformFilterValues(): void

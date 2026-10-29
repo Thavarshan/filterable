@@ -4,6 +4,17 @@ namespace Filterable\Concerns;
 
 trait HandlesFilterPermissions
 {
+    protected ?\Illuminate\Contracts\Auth\Authenticatable $authorizationActor = null;
+
+    protected bool $actorSet = false;
+
+    public function authorizeFor(?\Illuminate\Contracts\Auth\Authenticatable $actor): self
+    {
+        $this->authorizationActor = $actor;
+        $this->actorSet = true;
+
+        return $this;
+    }
     /**
      * Filters that require specific permissions.
      *
@@ -26,7 +37,7 @@ trait HandlesFilterPermissions
      */
     protected function checkFilterPermissions(): void
     {
-        if (empty($this->filterPermissions) || is_null($this->forUser)) {
+        if (empty($this->filterPermissions)) {
             return;
         }
 
@@ -39,16 +50,22 @@ trait HandlesFilterPermissions
             $permission = $this->filterPermissions[$filter];
 
             // Skip filters where the user doesn't have permission
-            if (! $this->userHasPermission($permission)) {
+            $policy = $this->permissionPolicies[$filter] ?? null;
+            $actor = $this->actorSet ? $this->authorizationActor : ($this->request->user() ?? $this->forUser);
+            if ($policy !== null) {
+                $gate = app(\Illuminate\Contracts\Auth\Access\Gate::class)->forUser($actor);
+                $allowed = $actor !== null && ($policy->any ? $gate->any((array) $permission) : $gate->check((array) $permission));
+            } else {
+                $allowed = $actor !== null && $this->userHasPermission($permission);
+            }
+
+            if (! $allowed) {
+                if ($policy?->reject) {
+                    throw new \Illuminate\Auth\Access\AuthorizationException('Filter permission denied.');
+                }
                 // Remove the filter from filterables
                 unset($this->filterables[$filter]);
 
-                if (method_exists($this, 'logInfo')) {
-                    $this->logInfo('Filter removed due to insufficient permissions', [
-                        'filter' => $filter,
-                        'required_permission' => $permission,
-                    ]);
-                }
             }
         }
     }
@@ -60,6 +77,8 @@ trait HandlesFilterPermissions
     {
         // Override this method in your specific filter class
         // to implement your authorization logic
-        return true;
+        $actor = $this->actorSet ? $this->authorizationActor : ($this->request->user() ?? $this->forUser);
+
+        return $actor !== null && app(\Illuminate\Contracts\Auth\Access\Gate::class)->forUser($actor)->check((array) $permission);
     }
 }

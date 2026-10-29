@@ -35,8 +35,19 @@ class MakeFilterCommand extends GeneratorCommand
     /**
      * Get the stub file for the generator.
      */
+    #[\Override]
     protected function getStub(): string
     {
+        if ($this->option('php85') && PHP_VERSION_ID < 80500) {
+            throw new InvalidArgumentException('--php85 requires PHP 8.5 or newer. No filter was written.');
+        }
+
+        if ($this->option('attributes') || $this->option('php85')) {
+            $variant = $this->option('basic') ? 'basic' : ($this->option('model') ? 'model' : 'default');
+            $suffix = $this->option('php85') ? '.php85' : '';
+
+            return $this->resolveStubPath('/stubs/filter.attributes.'.$variant.$suffix.'.stub');
+        }
         if ($this->option('basic')) {
             return $this->resolveStubPath('/stubs/filter.basic.stub');
         }
@@ -65,6 +76,7 @@ class MakeFilterCommand extends GeneratorCommand
      *
      * @param  string  $rootNamespace
      */
+    #[\Override]
     protected function getDefaultNamespace($rootNamespace): string
     {
         return $rootNamespace.'\Filters';
@@ -77,6 +89,7 @@ class MakeFilterCommand extends GeneratorCommand
      *
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
+    #[\Override]
     protected function buildClass($name): string
     {
         $stub = parent::buildClass($name);
@@ -126,9 +139,12 @@ class MakeFilterCommand extends GeneratorCommand
     /**
      * Get the console command options.
      */
+    #[\Override]
     protected function getOptions(): array
     {
         return [
+            ['attributes', null, InputOption::VALUE_NONE, 'Register filter methods with attributes'],
+            ['php85', null, InputOption::VALUE_NONE, 'Generate PHP 8.5 callable attributes (requires PHP 8.5)'],
             ['basic', 'b', InputOption::VALUE_NONE, 'Create a basic filter class'],
             ['model', 'm', InputOption::VALUE_OPTIONAL, 'Generate a filter for the given model'],
             ['force', 'f', InputOption::VALUE_NONE, 'Create the class even if the filter already exists'],

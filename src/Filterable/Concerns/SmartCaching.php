@@ -75,7 +75,7 @@ trait SmartCaching
     {
         if (! method_exists($this, 'hasFeature') ||
             ! $this->hasFeature('caching') ||
-            ! $this->shouldCacheCount) {
+            ! $this->shouldCacheCount || $this->getCacheExpiration() === 0) {
             return $this->getBuilder()->count();
         }
 
@@ -102,7 +102,7 @@ trait SmartCaching
 
         $taggedCache = $this->getTaggedCache();
 
-        if (method_exists($taggedCache, 'flush')) {
+        if ($taggedCache instanceof \Illuminate\Cache\TaggedCache) {
             $taggedCache->flush();
         }
     }
@@ -114,7 +114,7 @@ trait SmartCaching
     {
         $cache = $this->getCacheHandler();
 
-        if (method_exists($cache, 'tags') && ! empty($this->cacheTags)) {
+        if (method_exists($cache, 'supportsTags') && $cache->supportsTags() && ! empty($this->cacheTags)) {
             return $cache->tags($this->cacheTags);
         }
 
@@ -154,6 +154,8 @@ trait SmartCaching
         // If caching is disabled or shouldn't be used for this query
         if (! method_exists($this, 'hasFeature') ||
             ! $this->hasFeature('caching') ||
+            $this->getCacheExpiration() === 0 ||
+            $this->getBuilder()->getEagerLoads() !== [] ||
             (! $this->shouldCacheResults && ! $this->shouldAutomaticallyCacheQuery())) {
             return $this->getBuilder()->get();
         }

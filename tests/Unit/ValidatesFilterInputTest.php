@@ -327,6 +327,10 @@ class ValidatesFilterInputTest extends TestCase
         // Create a filter with spying capabilities
         $filter = new class($this->request) extends TestFilter
         {
+            protected array $filters = ['name'];
+
+            protected function name(mixed $value): void {}
+
             public $validationCalled = false;
 
             protected function validateFilterInputs(): void
@@ -363,6 +367,10 @@ class ValidatesFilterInputTest extends TestCase
         // Create a filter with spying capabilities
         $filter = new class($this->request) extends TestFilter
         {
+            protected array $filters = ['name'];
+
+            protected function name(mixed $value): void {}
+
             public $validationCalled = false;
 
             protected function validateFilterInputs(): void

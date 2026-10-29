@@ -32,6 +32,9 @@ trait InteractsWithCache
      */
     public function setCacheExpiration(int $minutes): Filter
     {
+        if ($minutes < 0) {
+            throw new \InvalidArgumentException('Cache TTL must be zero or greater.');
+        }
         $this->cacheExpiration = $minutes;
 
         return $this;
@@ -70,23 +73,16 @@ trait InteractsWithCache
             ]);
         }
 
-        $this->getCacheHandler()->forget($this->buildCacheKey());
+        $this->getTaggedCache()->forget($this->buildCacheKey());
+        $this->getTaggedCache()->forget($this->buildCacheKey().':count');
     }
 
     /**
      * Apply the filterables to the query with caching.
      */
-    protected function applyFilterablesWithCache(): Collection
+    protected function applyFilterablesWithCache(): void
     {
-        return $this->getCacheHandler()->remember(
-            $this->buildCacheKey(),
-            Carbon::now()->addMinutes($this->getCacheExpiration()),
-            function (): Collection {
-                $this->applyFiltersToQuery();
-
-                return $this->getBuilder()->get();
-            }
-        );
+        $this->applyFiltersToQuery();
     }
 
     /**
@@ -94,6 +90,19 @@ trait InteractsWithCache
      */
     protected function buildCacheKey(): string
     {
+        if ($this->builder !== null) {
+            $builder = $this->builder;
+            $connection = $builder->getConnection();
+
+            return 'filters:'.hash('sha256', serialize([
+                static::class, $builder->getModel()::class,
+                $connection->getName(), $connection->getDatabaseName(),
+                $builder->toSql(), $builder->getBindings(), $builder->getEagerLoads() === [] ? [] : array_keys($builder->getEagerLoads()),
+                $this->options['cache_context'] ?? null,
+                $this->forUser?->getAuthIdentifier(),
+            ]));
+        }
+
         // Create a unique cache key with sanitized inputs
         $userPart = 'global';
 

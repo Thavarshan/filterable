@@ -29,6 +29,9 @@ trait HandlesRateLimiting
      */
     public function setMaxFilters(int $max): self
     {
+        if ($max < 0) {
+            throw new \InvalidArgumentException('Maximum filters must be zero or greater.');
+        }
         $this->maxFilters = $max;
 
         return $this;
@@ -39,6 +42,9 @@ trait HandlesRateLimiting
      */
     public function setMaxComplexity(int $max): self
     {
+        if ($max < 0) {
+            throw new \InvalidArgumentException('Maximum complexity must be zero or greater.');
+        }
         $this->maxComplexity = $max;
 
         return $this;

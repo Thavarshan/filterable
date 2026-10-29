@@ -34,6 +34,7 @@ use Throwable;
 abstract class Filter implements FilterContract
 {
     use Conditionable;
+    use \Filterable\Concerns\HasFilterDefinitions;
     use HandlesFilterables,
         HandlesFilterPermissions,
         HandlesPreFilters,
@@ -100,6 +101,7 @@ abstract class Filter implements FilterContract
         ?LoggerInterface $logger = null
     ) {
         $this->applyConfigurationDefaults();
+        $this->applyDefinitionDefaults();
 
         // Set up the dependencies
         if ($cache) {
@@ -122,6 +124,8 @@ abstract class Filter implements FilterContract
             throw new RuntimeException("Filter cannot be reapplied. Current state: {$this->state}");
         }
 
+        $this->validateFilterDefinitions();
+        $this->getFilterables();
         $this->builder = $builder;
         $this->options = array_merge($this->options, $options ?? []);
         $this->state = 'applying';
@@ -141,11 +145,6 @@ abstract class Filter implements FilterContract
             ]);
         }
 
-        // Apply query optimizations if enabled
-        if ($this->hasFeature('optimization')) {
-            $this->optimizeQuery();
-        }
-
         try {
             // Security checks (only if the features are enabled)
             if ($this->hasFeature('validation')) {
@@ -156,15 +155,17 @@ abstract class Filter implements FilterContract
                 $this->checkFilterPermissions();
             }
 
-            if ($this->hasFeature('rateLimit')) {
-                if (! $this->checkRateLimits()) {
-                    throw new RuntimeException('Filter request exceeded rate limit or complexity threshold');
-                }
-            }
-
             // Apply value transformations if enabled
             if ($this->hasFeature('valueTransformation')) {
                 $this->transformFilterValues();
+            }
+
+            if ($this->hasFeature('rateLimit') && ! $this->checkRateLimits()) {
+                throw new \Illuminate\Auth\Access\AuthorizationException('Filter request exceeded rate limit or complexity threshold');
+            }
+
+            if ($this->hasFeature('optimization')) {
+                $this->optimizeQuery();
             }
 
             // Core filtering (always applied)
@@ -198,7 +199,7 @@ abstract class Filter implements FilterContract
             Event::dispatch(new FilterFailed($this, $this->builder, $e));
 
             // Always rethrow validation exceptions
-            if ($e instanceof ValidationException) {
+            if ($e instanceof ValidationException || $e instanceof \Illuminate\Auth\Access\AuthorizationException || $e instanceof \InvalidArgumentException) {
                 throw $e;
             }
 
@@ -386,8 +387,13 @@ abstract class Filter implements FilterContract
         $this->builder = null;
         $this->lastException = null;
         $this->filterables = [];
+        $this->rawFilterables = [];
+        $this->inputsResolved = false;
         $this->currentFilters = [];
         $this->customFilters = [];
+        $this->forUser = null;
+        $this->authorizationActor = null;
+        $this->actorSet = false;
 
         return $this;
     }

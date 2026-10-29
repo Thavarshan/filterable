@@ -35,6 +35,10 @@ trait HandlesFilterables
      */
     protected array $filterables = [];
 
+    protected bool $inputsResolved = false;
+
+    protected array $rawFilterables = [];
+
     /**
      * The current filters being applied.
      *
@@ -67,16 +71,22 @@ trait HandlesFilterables
      */
     public function getFilterables(): array
     {
+        if ($this->inputsResolved) {
+            $this->currentFilters = array_keys($this->filterables);
+
+            return $this->filterables;
+        }
+
         $filterKeys = array_merge(
             $this->getFilters(),
             array_keys($this->filterMethodMap ?? [])
         );
 
         // Contains key, value pairs of the filters
-        $this->filterables = array_merge(
-            $this->filterables,
-            array_filter($this->request->only($filterKeys))
-        );
+        $this->rawFilterables = array_replace($this->request->only($filterKeys), $this->filterables);
+        $this->filterables = array_filter($this->rawFilterables,
+            static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
+        $this->inputsResolved = true;
 
         $this->currentFilters = array_keys($this->filterables);
 
@@ -129,13 +139,6 @@ trait HandlesFilterables
      */
     protected function applyFilterables(): void
     {
-        // Use hasFeature('caching') instead of shouldCache()
-        if (method_exists($this, 'hasFeature') && $this->hasFeature('caching')) {
-            $this->applyFilterablesWithCache();
-
-            return;
-        }
-
         $this->applyFiltersToQuery();
     }
 
@@ -147,7 +150,6 @@ trait HandlesFilterables
         collect($this->getFilterables())
             ->filter(fn (mixed $value) => $value !== null
                 && $value !== ''
-                && $value !== false
                 && $value !== [])
             ->each(function ($value, $filter) {
                 $this->applyFilterable($filter, $value);

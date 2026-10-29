@@ -53,6 +53,7 @@
         "tightenco/duster": "^3.1"
     },
     "scripts": {
+        "analyse": "phpstan analyse --memory-limit=1G",
         "lint": "chmod +x bin/lint.sh && ./bin/lint.sh",
         "fix": "chmod +x bin/fix.sh && ./bin/fix.sh",
         "test": "chmod +x bin/test.sh && ./bin/test.sh"

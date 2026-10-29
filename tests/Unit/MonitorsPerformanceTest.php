@@ -204,7 +204,7 @@ class MonitorsPerformanceTest extends TestCase
         $builder->shouldReceive('get')->andReturn(collect());
 
         // Mock the Filter class to verify startTiming and endTiming are called
-        $filterMock = m::mock(TestFilter::class)
+        $filterMock = m::mock(TestFilter::class, [new \Illuminate\Http\Request])
             ->shouldAllowMockingProtectedMethods()
             ->makePartial();
 
@@ -233,7 +233,7 @@ class MonitorsPerformanceTest extends TestCase
         $builder->shouldReceive('get')->andReturn(collect());
 
         // Mock the Filter class to verify startTiming and endTiming are NOT called
-        $filterMock = m::mock(TestFilter::class)
+        $filterMock = m::mock(TestFilter::class, [new \Illuminate\Http\Request])
             ->shouldAllowMockingProtectedMethods()
             ->makePartial();
 

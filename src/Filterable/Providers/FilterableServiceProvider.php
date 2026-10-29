@@ -12,6 +12,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function configurePackage(Package $package): void
     {
         $package->name('filterable')
@@ -22,6 +23,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     public function packageRegistered(): void
     {
         $this->registerFilterBindings();
@@ -47,6 +49,7 @@ class FilterableServiceProvider extends PackageServiceProvider
     /**
      * {@inheritdoc}
      */
+    #[\Override]
     protected function getPackageBaseDir(): string
     {
         return dirname(__DIR__, 2);

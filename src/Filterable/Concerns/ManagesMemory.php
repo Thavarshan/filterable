@@ -19,6 +19,7 @@ trait ManagesMemory
     /**
      * Execute the query and return a lazy collection.
      */
+    #[\NoDiscard]
     public function lazy(int $chunkSize = 1000): LazyCollection
     {
         $chunkSize = $this->resolveChunkSize($chunkSize);
@@ -49,12 +50,13 @@ trait ManagesMemory
     /**
      * Create a generator to iterate through results with minimal memory usage.
      */
+    #[\NoDiscard]
     public function cursor(): Generator
     {
         $this->ensureApplied();
 
         // Use cursor for low memory iteration
-        return $this->resolveBuilder()->cursor();
+        yield from $this->resolveBuilder()->cursor();
     }
 
     /**
@@ -125,6 +127,7 @@ trait ManagesMemory
     /**
      * Stream the query results as a lazy collection.
      */
+    #[\NoDiscard]
     public function stream(?int $chunkSize = null): LazyCollection
     {
         $chunkSize = $this->resolveChunkSize($chunkSize);
@@ -139,6 +142,7 @@ trait ManagesMemory
     /**
      * Stream the query results as a native generator.
      */
+    #[\NoDiscard]
     public function streamGenerator(?int $chunkSize = null): Generator
     {
         foreach ($this->stream($chunkSize) as $item) {

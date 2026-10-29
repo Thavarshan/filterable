@@ -251,7 +251,8 @@ class FilterTest extends TestCase
         // Apply filter
         $filter->apply($this->builder);
 
-        // This is enough to test the caching feature - we're verifying that caching is enabled and apply completes
+        $this->assertSame(['cached_item'], $filter->get()->all());
+
         $this->assertEquals('applied', $filter->getDebugInfo()['state']);
     }
 

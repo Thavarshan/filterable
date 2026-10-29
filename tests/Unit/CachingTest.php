@@ -143,7 +143,7 @@ class CachingTest extends TestCase
         $logger->shouldReceive('info')->zeroOrMoreTimes();
 
         $this->cache->shouldReceive('forget')
-            ->once()
+            ->twice()
             ->with(m::type('string'))
             ->andReturn(true);
 

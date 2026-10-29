@@ -1,5 +1,5 @@
 includes:
-    - vendor/nunomaduro/larastan/extension.neon
+    - vendor/larastan/larastan/extension.neon
 
 parameters:
     paths:
@@ -8,5 +8,4 @@ parameters:
     level: max
     ignoreErrors:
         - '#Unsafe usage of new static#'
-    checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
