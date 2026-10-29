@@ -21,3 +21,13 @@ Release gate: no issue closing reference until its acceptance criteria are verif
 Retain PHP 8.3+ and Laravel 11–13; Laravel 13 itself requires PHP 8.3+.
 Existing release tags omit `v`, while release titles use `v` (latest `2.1.2`).
 Release automation owns CHANGELOG updates after publication; avoid a competing release entry.
+
+## Acceptance review
+
+- Source and tests pass maximum-level Larastan with no baseline or ignored-error list. All 1,100+ findings exposed by the corrected original configuration were resolved.
+- Local strict Duster/syntax checks pass. The complete suite currently has 205 tests / 587 assertions on PHP 8.3, with the three version/service tests intentionally delegated to their runtime/service CI jobs.
+- CI verified all nine PHP/framework combinations, lowest dependencies, native PHP 8.5 callable/NoDiscard fixtures, MySQL/Redis, and PostgreSQL/pgvector/Redis at `61ef37e`; final-head checks are reviewed separately before merge.
+- Handler, inheritance, trait, alias, invalid-definition, helper exclusion, runtime overrides, typed Carbon conversion, Gate guest/all/any/reject, zero/false, reset, custom generated stubs/force and vector bounds have dedicated integration coverage.
+- The version is 3.0.0 because explicit programmatic registration, guest authorization, fail-fast definitions/security and the protected cache hook intentionally change extension behavior. Runtime floors remain unchanged.
+- Documentation lives in `docs/attributes-and-migration.md` and `docs/vector-search.md`; README cache injection/execution guidance is corrected. Release automation continues to own CHANGELOG entries.
+- Final delivery evidence is the PR checks, merged-main checks, GitHub release target and Packagist source reference. Do not mark publication complete before checking them.

@@ -58,6 +58,11 @@ trait HandlesRateLimiting
      */
     public function setFilterComplexity(array $complexityMap): self
     {
+        foreach ($complexityMap as $filter => $weight) {
+            if (! is_string($filter) || ! is_int($weight) || $weight < 0) {
+                throw new InvalidArgumentException('Filter complexity requires named nonnegative integer weights.');
+            }
+        }
         $this->filterComplexity = $complexityMap;
 
         return $this;

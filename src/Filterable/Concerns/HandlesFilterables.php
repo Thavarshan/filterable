@@ -108,7 +108,7 @@ trait HandlesFilterables
      */
     public function getFilters(): array
     {
-        return $this->filters;
+        return array_values(array_unique(array_merge($this->filters, array_keys($this->filterMethodMap))));
     }
 
     /**

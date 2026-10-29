@@ -18,5 +18,10 @@ final readonly class CachePolicy
         if ($ttlMinutes < 0) {
             throw new InvalidArgumentException('CachePolicy TTL must be zero or greater.');
         }
+        foreach ($tags as $tag) {
+            if (! is_string($tag) || $tag === '') {
+                throw new InvalidArgumentException('Cache tags must be non-empty strings.');
+            }
+        }
     }
 }
