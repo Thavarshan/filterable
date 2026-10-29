@@ -11,7 +11,7 @@ final readonly class CachePolicy
     /** @param list<string> $tags */
     public function __construct(
         public int $ttlMinutes = 5,
-        public bool $results = true,
+        public ?bool $results = true,
         public bool $count = false,
         public array $tags = [],
     ) {

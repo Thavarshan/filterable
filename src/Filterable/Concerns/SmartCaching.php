@@ -7,6 +7,7 @@ use Illuminate\Cache\TaggedCache;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use ReflectionObject;
 
 trait SmartCaching
 {
@@ -21,6 +22,9 @@ trait SmartCaching
      * Whether to cache query results.
      */
     protected bool $shouldCacheResults = false;
+
+    /** Null preserves automatic mode and legacy protected-property defaults. */
+    protected ?bool $resultCachePolicy = null;
 
     /**
      * Whether to cache query count only.
@@ -48,6 +52,16 @@ trait SmartCaching
     public function cacheResults(bool $shouldCache = true): self
     {
         $this->shouldCacheResults = $shouldCache;
+        $this->resultCachePolicy = $shouldCache;
+
+        return $this;
+    }
+
+    /** Restore heuristic result caching without enabling the caching concern. */
+    public function autoCacheResults(): self
+    {
+        $this->shouldCacheResults = false;
+        $this->resultCachePolicy = null;
 
         return $this;
     }
@@ -76,7 +90,7 @@ trait SmartCaching
     public function count(): int
     {
         if (! $this->hasFeature('caching') ||
-            ! $this->shouldCacheCount || $this->getCacheExpiration() === 0) {
+            ! $this->shouldCacheCount || $this->getCacheExpiration() === 0 || $this->hasQueryCallbacks()) {
             return $this->resolveBuilder()->count();
         }
 
@@ -158,7 +172,8 @@ trait SmartCaching
         if (! $this->hasFeature('caching') ||
             $this->getCacheExpiration() === 0 ||
             $this->resolveBuilder()->getEagerLoads() !== [] ||
-            (! $this->shouldCacheResults && ! $this->shouldAutomaticallyCacheQuery())) {
+            $this->hasQueryCallbacks() ||
+            ! ($this->resultCachePolicy ?? ($this->shouldCacheResults || $this->shouldAutomaticallyCacheQuery()))) {
             return $this->resolveBuilder()->get();
         }
 
@@ -180,5 +195,28 @@ trait SmartCaching
                 return $this->resolveBuilder()->get();
             }
         );
+    }
+
+    /**
+     * Callback output and side effects belong to the current get(), not a cached query.
+     * Laravel 11–13 expose registration but no public callback-list getter. Inspect
+     * the scoped clone and its base query without invoking or caching any closures.
+     */
+    protected function hasQueryCallbacks(): bool
+    {
+        $builder = $this->resolveBuilder()->applyScopes();
+        if ($builder->getEagerLoads() !== []) {
+            return true;
+        }
+        foreach ([$builder, $builder->getQuery()] as $query) {
+            $reflection = new ReflectionObject($query);
+            foreach (['afterQueryCallbacks', 'beforeQueryCallbacks'] as $property) {
+                if ($reflection->hasProperty($property) && $reflection->getProperty($property)->getValue($query) !== []) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

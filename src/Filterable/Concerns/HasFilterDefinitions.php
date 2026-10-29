@@ -37,7 +37,11 @@ trait HasFilterDefinitions
                     $defaults = $attribute->newInstance();
                     if ($defaults instanceof CachePolicy) {
                         $this->cacheExpiration = $defaults->ttlMinutes;
-                        $this->shouldCacheResults = $defaults->results;
+                        if ($defaults->results === null) {
+                            $this->autoCacheResults();
+                        } else {
+                            $this->cacheResults($defaults->results);
+                        }
                         $this->shouldCacheCount = $defaults->count;
                         $this->cacheTags = $defaults->tags;
                         $this->features['caching'] = true;
