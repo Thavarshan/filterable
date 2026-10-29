@@ -25,6 +25,8 @@ trait OptimizesQueries
 
     /**
      * Set specific columns to select to reduce data transfer.
+     *
+     * @param  list<string>  $columns
      */
     public function select(array $columns): self
     {
@@ -35,6 +37,8 @@ trait OptimizesQueries
 
     /**
      * Eager load relationships to prevent N+1 queries.
+     *
+     * @param  list<string>|string  $relations
      */
     public function with(array|string $relations): self
     {
@@ -65,7 +69,15 @@ trait OptimizesQueries
     {
         // This will add an index hint in MySQL
         // Note: This is database-specific and may need adaptation
-        $this->getBuilder()->from($this->getBuilder()->getQuery()->from." USE INDEX ({$index})");
+        if (! preg_match('/^[A-Za-z0-9_]+$/D', $index)) {
+            throw new \InvalidArgumentException('Invalid index name.');
+        }
+        $builder = $this->resolveBuilder();
+        $table = $builder->getQuery()->from;
+        if (! is_string($table)) {
+            throw new \InvalidArgumentException('Index hints require a named table.');
+        }
+        $builder->from($table." USE INDEX ({$index})");
 
         return $this;
     }
@@ -77,12 +89,12 @@ trait OptimizesQueries
     {
         // Select only needed columns
         if (! is_null($this->selectColumns)) {
-            $this->getBuilder()->select($this->selectColumns);
+            $this->resolveBuilder()->select($this->selectColumns);
         }
 
         // Add eager loading for relationships
         if (! empty($this->eagerLoadRelations)) {
-            $this->getBuilder()->with($this->eagerLoadRelations);
+            $this->resolveBuilder()->with($this->eagerLoadRelations);
         }
 
         // Use query chunking for large datasets if configured

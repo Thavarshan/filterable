@@ -11,6 +11,10 @@ trait Filterable
     /**
      * Apply all relevant space filters.
      *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $query
+     * @param  array<string, mixed>|null  $options
+     * @return \Illuminate\Database\Eloquent\Builder<*>
+     *
      * @throws Exception
      */
     public function scopeFilter(

@@ -9,6 +9,7 @@ use InvalidArgumentException;
 #[Attribute(Attribute::TARGET_METHOD)]
 final readonly class TransformWith
 {
+    /** @param string|array{class-string, string}|Closure $transformer */
     public function __construct(public string|array|Closure $transformer)
     {
         if ($transformer instanceof Closure && (new \ReflectionFunction($transformer))->getClosureThis() !== null) {

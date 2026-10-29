@@ -12,8 +12,10 @@ use ReflectionProperty;
 
 class TransformsFilterValuesTest extends TestCase
 {
+    /** @var \Illuminate\Http\Request */
     protected $request;
 
+    /** @var \Filterable\Tests\Fixtures\TestFilter */
     protected $filter;
 
     protected function setUp(): void
@@ -34,7 +36,7 @@ class TransformsFilterValuesTest extends TestCase
     public function test_can_register_transformer(): void
     {
         // Register a transformer
-        $transformer = function ($value) {
+        $transformer = function (string $value) {
             return strtoupper($value);
         };
 
@@ -47,21 +49,22 @@ class TransformsFilterValuesTest extends TestCase
         $transformersProperty = new ReflectionProperty($this->filter, 'transformers');
         $transformersProperty->setAccessible(true);
         $transformers = $transformersProperty->getValue($this->filter);
+        $this->assertIsArray($transformers);
 
         $this->assertArrayHasKey('name', $transformers);
-        $this->assertInstanceOf(\Closure::class, $transformers['name']);
+        $this->assertRuntimeInstanceOf(\Closure::class, $transformers['name']);
     }
 
     public function test_can_register_multiple_transformers(): void
     {
         // Register multiple transformers
-        $this->filter->registerTransformer('name', function ($v) {
+        $this->filter->registerTransformer('name', function (string $v) {
             return strtoupper($v);
         });
-        $this->filter->registerTransformer('email', function ($v) {
+        $this->filter->registerTransformer('email', function (string $v) {
             return strtolower($v);
         });
-        $this->filter->registerTransformer('age', function ($v) {
+        $this->filter->registerTransformer('age', function (string $v) {
             return (int) $v;
         });
 
@@ -69,6 +72,7 @@ class TransformsFilterValuesTest extends TestCase
         $transformersProperty = new ReflectionProperty($this->filter, 'transformers');
         $transformersProperty->setAccessible(true);
         $transformers = $transformersProperty->getValue($this->filter);
+        $this->assertIsArray($transformers);
 
         $this->assertCount(3, $transformers);
         $this->assertArrayHasKey('name', $transformers);
@@ -79,7 +83,7 @@ class TransformsFilterValuesTest extends TestCase
     public function test_transforms_filter_value_with_registered_transformer(): void
     {
         // Register a transformer
-        $this->filter->registerTransformer('name', function ($value) {
+        $this->filter->registerTransformer('name', function (string $value) {
             return strtoupper($value);
         });
 
@@ -112,7 +116,7 @@ class TransformsFilterValuesTest extends TestCase
     public function test_transforms_array_values(): void
     {
         // Define a transformer
-        $transformer = function ($value) {
+        $transformer = function (string $value) {
             return strtoupper($value);
         };
 
@@ -130,7 +134,7 @@ class TransformsFilterValuesTest extends TestCase
     public function test_transforms_array_with_key_preservation(): void
     {
         // Define a transformer
-        $transformer = function ($value) {
+        $transformer = function (string $value) {
             return strtoupper($value);
         };
 
@@ -155,7 +159,8 @@ class TransformsFilterValuesTest extends TestCase
 
             protected function name(mixed $value): void {}
 
-            public $transformedValues = [];
+            /** @var array<string, mixed> */
+            public array $transformedValues = [];
 
             protected function transformFilterValues(): void
             {
@@ -174,7 +179,7 @@ class TransformsFilterValuesTest extends TestCase
         $filter->enableFeature('valueTransformation');
 
         // Register a transformer
-        $filter->registerTransformer('name', function ($value) {
+        $filter->registerTransformer('name', function (string $value) {
             return strtoupper($value);
         });
 
@@ -200,12 +205,15 @@ class TransformsFilterValuesTest extends TestCase
                 return [$values];
             }
 
-            return array_map('strtoupper', $values);
+            return array_map(function ($value) {
+                $this->assertIsString($value);
+                return strtoupper($value);
+            }, $values);
         });
 
         // Register a transformer for objects
-        $this->filter->registerTransformer('user', function ($value) {
-            if (is_object($value) && isset($value->name)) {
+        $this->filter->registerTransformer('user', function (mixed $value) {
+            if ($value instanceof \stdClass && isset($value->name) && is_string($value->name)) {
                 $value->name = strtoupper($value->name);
             }
 
@@ -227,6 +235,7 @@ class TransformsFilterValuesTest extends TestCase
         $user->name = 'john';
         $user->email = 'john@example.com';
         $userResult = $method->invoke($this->filter, 'user', $user);
+        $this->assertInstanceOf(\stdClass::class, $userResult);
 
         // Verify transformations
         $this->assertEquals(['PHP', 'LARAVEL', 'TESTING'], $tagsResult);
@@ -238,15 +247,15 @@ class TransformsFilterValuesTest extends TestCase
     public function test_transformers_can_change_value_type(): void
     {
         // Register transformers that change value types
-        $this->filter->registerTransformer('string_to_int', function ($value) {
+        $this->filter->registerTransformer('string_to_int', function (string $value) {
             return (int) $value;
         });
 
-        $this->filter->registerTransformer('int_to_bool', function ($value) {
+        $this->filter->registerTransformer('int_to_bool', function (string $value) {
             return (bool) $value;
         });
 
-        $this->filter->registerTransformer('string_to_array', function ($value) {
+        $this->filter->registerTransformer('string_to_array', function (string $value) {
             return explode(',', $value);
         });
 
@@ -279,7 +288,7 @@ class TransformsFilterValuesTest extends TestCase
 
             protected function name(mixed $value): void {}
 
-            public $transformCalled = false;
+            public bool $transformCalled = false;
 
             protected function transformFilterValues(): void
             {
@@ -292,7 +301,7 @@ class TransformsFilterValuesTest extends TestCase
         $filter->disableFeature('valueTransformation');
 
         // Register a transformer
-        $filter->registerTransformer('name', function ($value) {
+        $filter->registerTransformer('name', function (string $value) {
             return strtoupper($value);
         });
 

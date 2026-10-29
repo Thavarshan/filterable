@@ -9,6 +9,12 @@ use Psr\Log\LoggerInterface;
 
 class TestFilter extends Filter
 {
+    /** @return \Illuminate\Database\Eloquent\Builder<*> */
+    public function requireBuilder(): \Illuminate\Database\Eloquent\Builder
+    {
+        return $this->resolveBuilder();
+    }
+
     /**
      * Cache expiration time in minutes.
      */

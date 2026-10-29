@@ -32,6 +32,8 @@ trait InteractsWithLogging
 
     /**
      * Log an informational message.
+     *
+     * @param  array<string, mixed>  $context
      */
     protected function logInfo(string $message, array $context = []): void
     {
@@ -42,6 +44,8 @@ trait InteractsWithLogging
 
     /**
      * Log a debug message.
+     *
+     * @param  array<string, mixed>  $context
      */
     protected function logDebug(string $message, array $context = []): void
     {
@@ -52,6 +56,8 @@ trait InteractsWithLogging
 
     /**
      * Log a warning message.
+     *
+     * @param  array<string, mixed>  $context
      */
     protected function logWarning(string $message, array $context = []): void
     {

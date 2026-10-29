@@ -13,10 +13,13 @@ use ReflectionProperty;
 
 class MonitorsPerformanceTest extends TestCase
 {
+    /** @var \Illuminate\Http\Request */
     protected $request;
 
+    /** @var \Filterable\Tests\Fixtures\TestFilter */
     protected $filter;
 
+    /** @var \Psr\Log\LoggerInterface&\Mockery\MockInterface */
     protected $logger;
 
     protected function setUp(): void
@@ -135,7 +138,7 @@ class MonitorsPerformanceTest extends TestCase
         $this->logger->shouldReceive('info')
             ->once()
             ->with('Filter executed', m::on(function ($context) {
-                return isset($context['execution_time']) &&
+                return is_array($context) && isset($context['execution_time']) &&
                        isset($context['memory_usage']) &&
                        isset($context['filter_count']);
             }));
@@ -146,7 +149,7 @@ class MonitorsPerformanceTest extends TestCase
         $endTimingMethod->invoke($this->filter);
 
         // Verify that the log method was called (using Mockery's verification)
-        $this->assertTrue(true, 'End timing logged information');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'End timing logged information');
     }
 
     public function test_end_timing_does_not_log_when_logging_disabled(): void
@@ -168,7 +171,7 @@ class MonitorsPerformanceTest extends TestCase
         $endTimingMethod->invoke($this->filter);
 
         // Verify that the log method was not called (using Mockery's verification)
-        $this->assertTrue(true, 'End timing did not log when disabled');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'End timing did not log when disabled');
     }
 
     public function test_get_execution_time_returns_correct_value(): void
@@ -223,7 +226,7 @@ class MonitorsPerformanceTest extends TestCase
         $filterMock->apply($builder);
 
         // Verify the timing methods were called
-        $this->assertTrue(true, 'Performance monitoring was invoked during filter application');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Performance monitoring was invoked during filter application');
     }
 
     public function test_performance_monitoring_not_triggered_when_disabled(): void
@@ -250,6 +253,6 @@ class MonitorsPerformanceTest extends TestCase
         $filterMock->apply($builder);
 
         // Verify the timing methods were not called
-        $this->assertTrue(true, 'Performance monitoring was not triggered when disabled');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'Performance monitoring was not triggered when disabled');
     }
 }

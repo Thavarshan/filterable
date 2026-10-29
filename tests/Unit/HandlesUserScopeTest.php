@@ -14,14 +14,19 @@ use ReflectionProperty;
 
 class HandlesUserScopeTest extends TestCase
 {
+    /** @var \Illuminate\Http\Request */
     protected $request;
 
+    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable>&\Mockery\MockInterface */
     protected $builder;
 
+    /** @var \Filterable\Tests\Fixtures\TestFilter */
     protected $filter;
 
+    /** @var \Illuminate\Contracts\Auth\Authenticatable */
     protected $user;
 
+    /** @var \Psr\Log\LoggerInterface&\Mockery\MockInterface */
     protected $logger;
 
     protected function setUp(): void
@@ -93,7 +98,7 @@ class HandlesUserScopeTest extends TestCase
         $reflectionMethod->setAccessible(true);
         $reflectionMethod->invoke($this->filter);
 
-        $this->assertTrue(true, 'User scope was not applied when no user is set');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'User scope was not applied when no user is set');
     }
 
     public function test_applies_user_scope_when_user_is_set(): void
@@ -113,7 +118,7 @@ class HandlesUserScopeTest extends TestCase
         $reflectionMethod->setAccessible(true);
         $reflectionMethod->invoke($this->filter);
 
-        $this->assertTrue(true, 'User scope was applied correctly');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'User scope was applied correctly');
     }
 
     public function test_logs_user_scope_application_when_logging_enabled(): void
@@ -143,7 +148,7 @@ class HandlesUserScopeTest extends TestCase
         $reflectionMethod->setAccessible(true);
         $reflectionMethod->invoke($this->filter);
 
-        $this->assertTrue(true, 'User scope was logged correctly');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'User scope was logged correctly');
     }
 
     public function test_does_not_log_when_logging_disabled(): void
@@ -168,7 +173,7 @@ class HandlesUserScopeTest extends TestCase
         $reflectionMethod->setAccessible(true);
         $reflectionMethod->invoke($this->filter);
 
-        $this->assertTrue(true, 'User scope was applied without logging');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'User scope was applied without logging');
     }
 
     public function test_user_scope_is_applied_during_filter_application(): void
@@ -193,7 +198,7 @@ class HandlesUserScopeTest extends TestCase
         // Apply the filter
         $filter->apply($builder);
 
-        $this->assertTrue(true, 'User scope was applied during filter application');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'User scope was applied during filter application');
     }
 
     public function test_handles_different_user_identifier_fields(): void
@@ -220,7 +225,7 @@ class HandlesUserScopeTest extends TestCase
         $reflectionMethod->setAccessible(true);
         $reflectionMethod->invoke($this->filter);
 
-        $this->assertTrue(true, 'User scope was applied with a different identifier field');
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount(), 'User scope was applied with a different identifier field');
     }
 
     /**

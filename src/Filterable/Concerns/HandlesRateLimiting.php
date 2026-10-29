@@ -52,6 +52,8 @@ trait HandlesRateLimiting
 
     /**
      * Set complexity scores for specific filters.
+     *
+     * @param  array<string, int>  $complexityMap
      */
     public function setFilterComplexity(array $complexityMap): self
     {
@@ -68,7 +70,7 @@ trait HandlesRateLimiting
         // Check the number of filters
         $filterCount = count($this->getFilterables());
         if ($filterCount > $this->maxFilters) {
-            if (method_exists($this, 'logWarning')) {
+            if ($this->hasFeature('logging')) {
                 $this->logWarning('Too many filters applied', [
                     'applied' => $filterCount,
                     'maximum' => $this->maxFilters,
@@ -81,7 +83,7 @@ trait HandlesRateLimiting
         // Check the complexity score
         $complexityScore = $this->calculateComplexity();
         if ($complexityScore > $this->maxComplexity) {
-            if (method_exists($this, 'logWarning')) {
+            if ($this->hasFeature('logging')) {
                 $this->logWarning('Filter request too complex', [
                     'complexity' => $complexityScore,
                     'maximum' => $this->maxComplexity,
@@ -98,8 +100,8 @@ trait HandlesRateLimiting
         $windowSeconds = $this->resolveRateLimitWindowSeconds($complexityScore);
         $decaySeconds = $this->resolveRateLimitDecaySeconds($complexityScore);
 
-        if ($limiter->tooManyAttempts($key, $maxAttempts, $windowSeconds)) {
-            if (method_exists($this, 'logWarning')) {
+        if ($limiter->tooManyAttempts($key, $maxAttempts)) {
+            if ($this->hasFeature('logging')) {
                 $this->logWarning('Rate limit exceeded for complex filter', [
                     'ip' => $this->request->ip(),
                     'user' => $this->resolveRateLimitUserIdentifier(),
@@ -166,11 +168,7 @@ trait HandlesRateLimiting
      */
     protected function resolveRateLimitUserIdentifier(): ?string
     {
-        if (! property_exists($this, 'forUser') || $this->forUser === null) {
-            return null;
-        }
-
-        if (! method_exists($this->forUser, 'getAuthIdentifier')) {
+        if ($this->forUser === null) {
             return null;
         }
 

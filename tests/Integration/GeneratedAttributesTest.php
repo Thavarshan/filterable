@@ -33,8 +33,9 @@ class GeneratedAttributesTest extends TestCase
                     require_once $path;
                     $class = 'App\\Filters\\'.$name;
                     $request = new Request([$variant === 'model' ? 'search' : 'name' => 'ALICE']);
-                    $this->app->instance(Request::class, $request);
-                    $filter = $this->app->make($class);
+                    app()->instance(Request::class, $request);
+                    $filter = app($class);
+                    $this->assertInstanceOf(\Filterable\Filter::class, $filter);
                     $query = $filter->apply(MockFilterable::query());
                     $this->assertSame([$variant === 'model' ? '%ALICE%' : 'ALICE'], $query->getBindings());
                     $this->assertCount(1, $query->get());

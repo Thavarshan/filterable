@@ -6,6 +6,7 @@ use Closure;
 use Generator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\LazyCollection;
 use RuntimeException;
 
@@ -18,6 +19,8 @@ trait ManagesMemory
 
     /**
      * Execute the query and return a lazy collection.
+     *
+     * @return LazyCollection<int, mixed>
      */
     #[\NoDiscard]
     public function lazy(int $chunkSize = 1000): LazyCollection
@@ -71,6 +74,8 @@ trait ManagesMemory
 
     /**
      * Map over the query results without loading all records.
+     *
+     * @return array<mixed>
      */
     public function map(callable $callback, int $chunkSize = 1000): array
     {
@@ -85,6 +90,8 @@ trait ManagesMemory
 
     /**
      * Filter the results without loading all records.
+     *
+     * @return array<mixed>
      */
     public function filter(callable $callback, int $chunkSize = 1000): array
     {
@@ -101,6 +108,9 @@ trait ManagesMemory
 
     /**
      * Reduce the results without loading all records.
+     *
+     * @param  mixed  $initial
+     * @return mixed
      */
     public function reduce(callable $callback, $initial = null, int $chunkSize = 1000)
     {
@@ -126,6 +136,8 @@ trait ManagesMemory
 
     /**
      * Stream the query results as a lazy collection.
+     *
+     * @return LazyCollection<int, mixed>
      */
     #[\NoDiscard]
     public function stream(?int $chunkSize = null): LazyCollection
@@ -153,6 +165,8 @@ trait ManagesMemory
     /**
      * Execute the query with memory management.
      * This method is called from the Filter::get() method when memory management is enabled.
+     *
+     * @return Collection<int, Model>
      */
     protected function executeQueryWithMemoryManagement(): Collection
     {
@@ -197,6 +211,8 @@ trait ManagesMemory
 
     /**
      * Resolve the builder instance or throw if it is unavailable.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<*>
      */
     protected function resolveBuilder(): Builder
     {
@@ -215,6 +231,10 @@ trait ManagesMemory
     protected function resolveChunkSize(?int $chunkSize = null): int
     {
         $size = $chunkSize ?? $this->options['chunk_size'] ?? 1000;
+
+        if (! is_numeric($size)) {
+            throw new \InvalidArgumentException('Chunk size must be numeric.');
+        }
 
         return max(1, (int) $size);
     }

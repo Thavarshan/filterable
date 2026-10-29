@@ -12,12 +12,16 @@ use Mockery as m;
 
 class OptimizesQueriesTest extends TestCase
 {
+    /** @var \Illuminate\Contracts\Cache\Repository&\Mockery\MockInterface */
     protected $cache;
 
+    /** @var \Illuminate\Http\Request */
     protected $request;
 
+    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable> */
     protected $builder;
 
+    /** @var \Filterable\Tests\Fixtures\TestFilter */
     protected $filter;
 
     protected function setUp(): void
@@ -50,6 +54,7 @@ class OptimizesQueriesTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
 
         // These methods should NOT be called when optimization is disabled
         $builderMock->shouldNotReceive('select');
@@ -73,6 +78,7 @@ class OptimizesQueriesTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
         $builderMock->shouldReceive('select')
             ->once()
             ->with(['id', 'name'])
@@ -90,6 +96,7 @@ class OptimizesQueriesTest extends TestCase
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
         $builderMock->shouldReceive('with')
             ->once()
             ->with(['relation1', 'relation2'])
@@ -100,13 +107,14 @@ class OptimizesQueriesTest extends TestCase
         $this->filter->apply($builderMock);
 
         // The assertion is in the mock expectation
-        $this->assertTrue(true);
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_accepts_string_relation_for_eager_loading(): void
     {
         // Create a mock builder
         $builderMock = m::mock($this->builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
         $builderMock->shouldReceive('with')
             ->once()
             ->with(['relation'])
@@ -117,7 +125,7 @@ class OptimizesQueriesTest extends TestCase
         $this->filter->apply($builderMock);
 
         // The assertion is in the mock expectation
-        $this->assertTrue(true);
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_sets_chunk_size_in_options(): void
@@ -145,6 +153,7 @@ class OptimizesQueriesTest extends TestCase
 
         // Create a mock builder that returns our mock query
         $builderMock = m::mock($this->builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
         $builderMock->shouldReceive('getQuery')
             ->andReturn($queryMock);
 
@@ -188,6 +197,7 @@ class OptimizesQueriesTest extends TestCase
 
         // Create a mock Eloquent builder
         $builderMock = m::mock($this->builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderMock);
 
         // Set up all the necessary method calls
         $builderMock->shouldReceive('getQuery')
@@ -230,6 +240,6 @@ class OptimizesQueriesTest extends TestCase
         $this->assertTrue($options['use_chunking']);
 
         // The rest of the assertions are in the mock expectations
-        $this->assertTrue(true);
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount());
     }
 }

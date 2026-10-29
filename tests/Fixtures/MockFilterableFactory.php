@@ -4,19 +4,20 @@ namespace Filterable\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/** @extends Factory<MockFilterable> */
 class MockFilterableFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var string
+     * @var class-string<MockFilterable>
      */
     protected $model = MockFilterable::class;
 
     /**
      * Define the model's default state.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function definition()
     {

@@ -1,83 +1,93 @@
 name: Tests
 
-on:
-  push:
-    paths:
-      - '**.php'
-      - '.github/workflows/tests.yml'
-      - 'phpunit.xml.dist'
-      - 'composer.json'
-      - 'composer.lock'
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        php: [8.3, 8.4, 8.5]
-        laravel: [11.*, 12.*, 13.*]
-        stability: [prefer-stable]
+        php: ['8.3', '8.4', '8.5']
+        laravel: ['11.*', '12.*', '13.*']
         include:
-          - laravel: 11.*
-            testbench: 9.*
-            carbon: ^2.63
-          - laravel: 12.*
-            testbench: 10.*
-          - laravel: 13.*
-            testbench: 11.*
+          - laravel: '11.*'
+            testbench: '9.*'
+          - laravel: '12.*'
+            testbench: '10.*'
+          - laravel: '13.*'
+            testbench: '11.*'
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, mbstring, zip, pdo_sqlite, bcmath, intl
+          coverage: none
+      - run: composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-update --no-interaction
+      - run: composer update --prefer-stable --prefer-dist --no-interaction --with-all-dependencies
+      - run: composer test
 
-    name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
+  lowest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, curl, mbstring, zip, pdo_sqlite, bcmath, intl
+          coverage: none
+      - run: composer require 'laravel/framework:^11.0' 'orchestra/testbench:^9.0' --no-update --no-interaction
+      - run: composer update --prefer-lowest --prefer-stable --prefer-dist --no-interaction --with-all-dependencies
+      - run: composer test
 
+  services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [mysql, pgsql]
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_USER: user
-          MYSQL_PASSWORD: secret
+          MYSQL_ROOT_PASSWORD: secret
           MYSQL_DATABASE: test_filterable
-          MYSQL_ROOT_PASSWORD: secretroot
-        ports:
-          - 3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      redis:
-        image: redis
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
-          coverage: none
-
-      - name: Setup problem matchers
-        run: |
-          echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-
-      - name: Install dependencies
-        run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}"  --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --with-all-dependencies
-
-      - name: Execute tests
-        run: composer test
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+      postgres:
+        image: pgvector/pgvector:pg17
         env:
-          DB_USERNAME: user
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: test_filterable
+        ports: ['5432:5432']
+        options: --health-cmd="pg_isready -U postgres" --health-interval=10s --health-timeout=5s --health-retries=5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, mbstring, zip, pdo_sqlite, pdo_mysql, pdo_pgsql, redis, bcmath, intl
+          coverage: none
+      - run: composer require 'laravel/framework:^13.0' 'orchestra/testbench:^11.0' --no-update --no-interaction
+      - run: composer update --prefer-stable --prefer-dist --no-interaction --with-all-dependencies
+      - run: composer test -- --filter='ServiceIntegrationTest|VectorSearchTest'
+        env:
+          FILTERABLE_TEST_DB: ${{ matrix.database }}
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: test_filterable
+          DB_USERNAME: ${{ matrix.database == 'mysql' && 'root' || 'postgres' }}
           DB_PASSWORD: secret
-          DB_PORT: ${{ job.services.mysql.ports[3306] }}
-          REDIS_PORT: 6379
+          DB_PORT: ${{ matrix.database == 'mysql' && '3306' || '5432' }}
+          FILTERABLE_TEST_REDIS: '1'

@@ -16,10 +16,13 @@ use ReflectionMethod;
 
 class CachingTest extends TestCase
 {
+    /** @var \Illuminate\Contracts\Cache\Repository&\Mockery\MockInterface */
     protected $cache;
 
+    /** @var \Illuminate\Http\Request */
     protected $request;
 
+    /** @var \Illuminate\Database\Eloquent\Builder<\Filterable\Tests\Fixtures\MockFilterable> */
     protected $builder;
 
     protected function setUp(): void
@@ -64,7 +67,7 @@ class CachingTest extends TestCase
         $filter->apply($this->builder);
         $results = $filter->get();
 
-        $this->assertInstanceOf(Collection::class, $results);
+        $this->assertRuntimeInstanceOf(Collection::class, $results);
         $this->assertCount(1, $results);
     }
 
@@ -79,7 +82,7 @@ class CachingTest extends TestCase
         $filter->apply($this->builder);
         $results = $filter->get();
 
-        $this->assertInstanceOf(Collection::class, $results);
+        $this->assertRuntimeInstanceOf(Collection::class, $results);
     }
 
     public function test_builds_appropriate_cache_key(): void
@@ -152,7 +155,7 @@ class CachingTest extends TestCase
         $filter->clearCache();
 
         // The assertion is in the mock expectation
-        $this->assertTrue(true);
+        $this->assertGreaterThan(0, \Mockery::getContainer()->mockery_getExpectationCount());
     }
 
     public function test_enables_and_disables_caching_per_instance(): void
@@ -201,7 +204,7 @@ class CachingTest extends TestCase
         $filter->apply($builder);
         $results = $filter->get();
 
-        $this->assertInstanceOf(Collection::class, $results);
+        $this->assertRuntimeInstanceOf(Collection::class, $results);
         $this->assertCount(1, $results);
     }
 
@@ -217,9 +220,11 @@ class CachingTest extends TestCase
         // Create a custom subclass of TestFilter that overrides key methods
         $testFilter = new class($this->request, $this->cache, $builder) extends TestFilter
         {
-            protected $testBuilder;
+            /** @var Builder<*> */
+            protected Builder $testBuilder;
 
-            public function __construct(Request $request, $cache, $testBuilder)
+            /** @param Builder<*> $testBuilder */
+            public function __construct(Request $request, \Illuminate\Contracts\Cache\Repository $cache, Builder $testBuilder)
             {
                 parent::__construct($request, $cache);
                 $this->testBuilder = $testBuilder;
@@ -227,6 +232,7 @@ class CachingTest extends TestCase
             }
 
             // Override executeQueryWithCaching to avoid caching
+            /** @return Collection<*, *> */
             protected function executeQueryWithCaching(): Collection
             {
                 // Skip caching and just return a collection directly
@@ -234,17 +240,22 @@ class CachingTest extends TestCase
             }
 
             // Override apply to set our builder
+            /** @param Builder<*> $builder
+             * @param array<string, mixed>|null $options
+             * @return Builder<*>
+             */
             public function apply($builder, ?array $options = []): Builder
             {
                 $this->builder = $this->testBuilder;
                 $this->state = 'applied';
 
-                return $this->builder;
+                return $this->resolveBuilder();
             }
         };
 
         // Mock the builder so we can verify it was called
         $builderSpy = m::mock($builder)->makePartial();
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Builder::class, $builderSpy);
         $builderSpy->shouldReceive('get')
             ->never() // Should not be called directly because we're returning from executeQueryWithCaching
             ->andReturn(collect());
@@ -256,7 +267,7 @@ class CachingTest extends TestCase
         $results = $testFilter->get();
 
         // Verify we got the expected results
-        $this->assertInstanceOf(Collection::class, $results);
+        $this->assertRuntimeInstanceOf(Collection::class, $results);
         $this->assertEquals(['test_item'], $results->all());
     }
 
@@ -313,10 +324,10 @@ class CachingTest extends TestCase
             $results = $filter->get();
 
             // Verify we got results
-            $this->assertInstanceOf(Collection::class, $results);
+            $this->assertRuntimeInstanceOf(Collection::class, $results);
 
             // Test passed if we got here without exceptions
-            $this->assertTrue(true);
+            $this->assertSame('applied', $filter->getDebugInfo()['state']);
         } catch (\Throwable $e) {
             $this->fail('Exception was thrown when using null user: '.$e->getMessage());
         }
@@ -359,10 +370,10 @@ class CachingTest extends TestCase
             $filter->apply($this->builder);
             $results = $filter->get();
 
-            $this->assertInstanceOf(Collection::class, $results);
+            $this->assertRuntimeInstanceOf(Collection::class, $results);
 
             // Test passed if we got here without exceptions
-            $this->assertTrue(true);
+            $this->assertSame('applied', $filter->getDebugInfo()['state']);
         } catch (\Throwable $e) {
             $this->fail('Exception was thrown when using user with auth identifier: '.$e->getMessage());
         }

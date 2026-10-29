@@ -18,6 +18,10 @@ interface Filter
 {
     /**
      * Apply the filters.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $builder
+     * @param  array<string, mixed>|null  $options
+     * @return \Illuminate\Database\Eloquent\Builder<*>
      */
     public function apply(Builder $builder, ?array $options = []): Builder;
 
@@ -99,11 +103,15 @@ interface Filter
 
     /**
      * Get the Eloquent builder instance.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<*>|null
      */
     public function getBuilder(): ?Builder;
 
     /**
      * Set the Eloquent builder instance.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $builder
      */
     public function setBuilder(Builder $builder): self;
 

@@ -17,6 +17,7 @@ final class FilterableTest extends TestCase
      *
      * @var \Mockery\MockInterface
      */
+    /** @var Filter&\Mockery\MockInterface */
     protected $filter;
 
     /**

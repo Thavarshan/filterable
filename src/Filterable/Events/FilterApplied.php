@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 class FilterApplied
 {
+    /** @param \Illuminate\Database\Eloquent\Builder<*> $builder */
     public function __construct(
         public readonly Filter $filter,
         public readonly Builder $builder,
         /**
-         * @var array<string, mixed>
+         * @var array<string>
          */
         public readonly array $filters
     ) {}

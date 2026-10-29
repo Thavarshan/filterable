@@ -9,13 +9,16 @@ use Filterable\Attributes\FilterLimits;
 use Filterable\Attributes\FilterRules;
 use Filterable\Attributes\RequiresPermission;
 use Filterable\Attributes\TransformWith;
+use Filterable\Contracts\RuleFactory;
 use Filterable\Definitions\DefinitionRegistry;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
 
 trait HasFilterDefinitions
 {
+    /** @var array<string, RequiresPermission> */
     protected array $permissionPolicies = [];
 
     protected function applyDefinitionDefaults(): void
@@ -55,7 +58,7 @@ trait HasFilterDefinitions
         }
 
         foreach (DefinitionRegistry::forClass(static::class) as $name => $definition) {
-            $legacy = $this->filterMethodMap[$name] ?? (in_array($name, $this->filters, true) ? \Illuminate\Support\Str::camel($name) : null);
+            $legacy = $this->filterMethodMap[$name] ?? (in_array($name, $this->filters, true) ? Str::camel($name) : null);
             if ($legacy !== null && $legacy !== $definition->method) {
                 throw new InvalidArgumentException("Conflicting legacy and attribute handlers for [{$name}].");
             }
@@ -65,15 +68,24 @@ trait HasFilterDefinitions
                 foreach ($method->getAttributes($type) as $attribute) {
                     $metadata = $attribute->newInstance();
                     if ($metadata instanceof FilterRules) {
-                        $this->validationRules[$name] = $metadata->factory === null ? $metadata->rules : app($metadata->factory)($this->request);
+                        $rules = $metadata->rules;
+                        if ($metadata->factory !== null) {
+                            $factory = app($metadata->factory);
+                            if (! $factory instanceof RuleFactory) {
+                                throw new InvalidArgumentException('Rule factories must implement RuleFactory.');
+                            }
+                            $rules = $factory($this->request);
+                        }
+                        $this->validationRules[$name] = $rules;
                         $this->validationMessages = array_replace($this->validationMessages, $metadata->messages);
                         $this->features['validation'] = true;
                     } elseif ($metadata instanceof TransformWith) {
                         $transformer = $metadata->transformer;
-                        $this->transformers[$name] = is_string($transformer) && class_exists($transformer) ? app($transformer) : $transformer;
-                        if (! is_callable($this->transformers[$name])) {
+                        $resolved = is_string($transformer) && class_exists($transformer) ? app($transformer) : $transformer;
+                        if (! is_callable($resolved)) {
                             throw new InvalidArgumentException("Invalid transformer for [{$name}].");
                         }
+                        $this->transformers[$name] = $resolved;
                         $this->features['valueTransformation'] = true;
                     } elseif ($metadata instanceof RequiresPermission) {
                         $this->filterPermissions[$name] = $metadata->permissions;

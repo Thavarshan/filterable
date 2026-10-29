@@ -10,7 +10,10 @@ interface Filterable
     /**
      * Apply all relevant space filters.
      *
-     * @return \Illuminate\Database\Eloquent\Builder $query
+     *
+     * @param \Illuminate\Database\Eloquent\Builder<*> $query
+     * @param  array<string, mixed>|null  $options
+     * @return Builder<*> $query
      *
      * @throws Exception
      */

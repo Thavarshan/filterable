@@ -8,6 +8,7 @@ use InvalidArgumentException;
 #[Attribute(Attribute::TARGET_CLASS)]
 final readonly class CachePolicy
 {
+    /** @param list<string> $tags */
     public function __construct(
         public int $ttlMinutes = 5,
         public bool $results = true,

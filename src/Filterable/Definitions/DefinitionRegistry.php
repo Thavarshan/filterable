@@ -17,7 +17,12 @@ final class DefinitionRegistry
         self::$definitions = [];
     }
 
-    /** Only immutable names are shared. Rules, transformers and services are resolved per instance. */
+    /**
+     * Only immutable names are shared. Rules, transformers and services are resolved per instance.
+     *
+     * @param  class-string  $class
+     * @return array<string, FilterDefinition>
+     */
     public static function forClass(string $class): array
     {
         if (isset(self::$definitions[$class])) {

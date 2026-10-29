@@ -15,10 +15,13 @@ use ReflectionProperty;
 
 class ValidatesFilterInputTest extends TestCase
 {
+    /** @var \Illuminate\Http\Request */
     protected $request;
 
+    /** @var \Filterable\Tests\Fixtures\TestFilter */
     protected $filter;
 
+    /** @var \Psr\Log\LoggerInterface&\Mockery\MockInterface */
     protected $logger;
 
     protected function setUp(): void
@@ -70,6 +73,7 @@ class ValidatesFilterInputTest extends TestCase
         $rulesProperty = new ReflectionProperty($this->filter, 'validationRules');
         $rulesProperty->setAccessible(true);
         $rules = $rulesProperty->getValue($this->filter);
+        $this->assertIsArray($rules);
 
         $this->assertArrayHasKey('name', $rules);
         $this->assertEquals('required|string|max:255', $rules['name']);
@@ -88,6 +92,7 @@ class ValidatesFilterInputTest extends TestCase
         $rulesProperty = new ReflectionProperty($this->filter, 'validationRules');
         $rulesProperty->setAccessible(true);
         $rules = $rulesProperty->getValue($this->filter);
+        $this->assertIsArray($rules);
 
         $this->assertArrayHasKey('name', $rules);
         $this->assertEquals($arrayRule, $rules['name']);
@@ -135,7 +140,7 @@ class ValidatesFilterInputTest extends TestCase
         // Should not throw exception
         try {
             $validateMethod->invoke($this->filter);
-            $this->assertTrue(true, 'Validation passed successfully');
+            $this->assertSame(['name', 'email'], array_keys($this->filter->getFilterables()), 'Validation passed successfully');
         } catch (ValidationException $e) {
             $this->fail('Validation should have passed but failed: '.$e->getMessage());
         }
@@ -156,7 +161,7 @@ class ValidatesFilterInputTest extends TestCase
         // Should not throw exception because no rules are defined
         try {
             $validateMethod->invoke($this->filter);
-            $this->assertTrue(true, 'Validation skipped when no rules defined');
+            $this->assertSame(['name', 'email'], array_keys($this->filter->getFilterables()), 'Validation skipped when no rules defined');
         } catch (ValidationException $e) {
             $this->fail('Validation should have been skipped but failed: '.$e->getMessage());
         }
@@ -181,7 +186,7 @@ class ValidatesFilterInputTest extends TestCase
         // Should not throw exception because no filterables match the rules
         try {
             $validateMethod->invoke($this->filter);
-            $this->assertTrue(true, 'Validation skipped when no matching filterables');
+            $this->assertSame(['name', 'email'], array_keys($this->filter->getFilterables()), 'Validation skipped when no matching filterables');
         } catch (ValidationException $e) {
             $this->fail('Validation should have been skipped but failed: '.$e->getMessage());
         }
@@ -230,9 +235,9 @@ class ValidatesFilterInputTest extends TestCase
         $this->logger->shouldReceive('info')
             ->once()
             ->with('Validating filter inputs', m::on(function ($context) {
-                return isset($context['inputs']) &&
+                return is_array($context) && isset($context['inputs']) &&
                        isset($context['rules']) &&
-                       count($context['inputs']) === 2 &&
+                       is_array($context['inputs']) && is_array($context['rules']) && count($context['inputs']) === 2 &&
                        count($context['rules']) === 2;
             }));
 
@@ -242,7 +247,7 @@ class ValidatesFilterInputTest extends TestCase
         $validateMethod->invoke($this->filter);
 
         // Verification is in the mock expectations
-        $this->assertTrue(true, 'Validation logged information');
+        $this->assertSame(['name', 'email'], array_keys($this->filter->getFilterables()), 'Validation logged information');
     }
 
     public function test_validation_not_logged_when_logging_disabled(): void
@@ -269,7 +274,7 @@ class ValidatesFilterInputTest extends TestCase
         $validateMethod->invoke($this->filter);
 
         // Verification is in the mock expectations
-        $this->assertTrue(true, 'Validation did not log when disabled');
+        $this->assertSame(['name', 'email'], array_keys($this->filter->getFilterables()), 'Validation did not log when disabled');
     }
 
     public function test_validation_uses_custom_messages(): void
@@ -310,6 +315,7 @@ class ValidatesFilterInputTest extends TestCase
             // Now that we've verified validation fails as expected, let's check if our custom message is used
             // We'll capture the real validation messages to see what's happening
             $actualMessage = $errors[0];
+            $this->assertIsString($actualMessage);
 
             // For debugging if needed
             // $this->assertEquals($customMessage, $actualMessage, 'Custom validation message should be used');
@@ -318,7 +324,7 @@ class ValidatesFilterInputTest extends TestCase
             $this->assertStringContainsString('valid email', $actualMessage, 'Validation message should contain our custom text');
 
             // Test passes if we get here
-            $this->assertTrue(true, 'Validation used custom messages');
+            $this->assertSame(['email'], array_keys($this->filter->getFilterables()), 'Validation used custom messages');
         }
     }
 
@@ -331,7 +337,7 @@ class ValidatesFilterInputTest extends TestCase
 
             protected function name(mixed $value): void {}
 
-            public $validationCalled = false;
+            public bool $validationCalled = false;
 
             protected function validateFilterInputs(): void
             {
@@ -371,7 +377,7 @@ class ValidatesFilterInputTest extends TestCase
 
             protected function name(mixed $value): void {}
 
-            public $validationCalled = false;
+            public bool $validationCalled = false;
 
             protected function validateFilterInputs(): void
             {

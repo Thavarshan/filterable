@@ -37,6 +37,7 @@ trait HandlesFilterables
 
     protected bool $inputsResolved = false;
 
+    /** @var array<string, mixed> */
     protected array $rawFilterables = [];
 
     /**
@@ -55,12 +56,17 @@ trait HandlesFilterables
 
         // Copy the filters array from the parent filter
         if (property_exists($filter, 'filters') && is_array($filter->filters)) {
-            $this->filters = $filter->filters;
+            $this->filters = array_values(array_filter($filter->filters, is_string(...)));
         }
 
         // Copy the filter method map if it exists
         if (property_exists($filter, 'filterMethodMap') && is_array($filter->filterMethodMap)) {
-            $this->filterMethodMap = $filter->filterMethodMap;
+            $this->filterMethodMap = [];
+            foreach ($filter->filterMethodMap as $key => $method) {
+                if (is_string($key) && is_string($method)) {
+                    $this->filterMethodMap[$key] = $method;
+                }
+            }
         }
     }
 
@@ -79,11 +85,13 @@ trait HandlesFilterables
 
         $filterKeys = array_merge(
             $this->getFilters(),
-            array_keys($this->filterMethodMap ?? [])
+            array_keys($this->filterMethodMap)
         );
 
         // Contains key, value pairs of the filters
-        $this->rawFilterables = array_replace($this->request->only($filterKeys), $this->filterables);
+        /** @var array<string, mixed> $requestInputs */
+        $requestInputs = $this->request->only($filterKeys);
+        $this->rawFilterables = array_replace($requestInputs, $this->filterables);
         $this->filterables = array_filter($this->rawFilterables,
             static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
         $this->inputsResolved = true;
@@ -175,7 +183,7 @@ trait HandlesFilterables
             'value' => $value,
         ]);
 
-        call_user_func([$this, $method], $value);
+        $this->{$method}($value);
     }
 
     /**

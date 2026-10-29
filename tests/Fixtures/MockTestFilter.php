@@ -11,8 +11,12 @@ use RuntimeException;
 
 class MockTestFilter extends Filter
 {
+    protected ?string $failureReason = null;
     /**
      * Apply the filter to a builder instance.
+      * @param \Illuminate\Database\Eloquent\Builder<*> $builder
+      * @param array<string, mixed>|null $options
+      * @return \Illuminate\Database\Eloquent\Builder<*>
      */
     public function apply(Builder $builder, ?array $options = []): Builder
     {
@@ -37,31 +41,33 @@ class MockTestFilter extends Filter
             }
         }
 
-        return $this->builder;
+        return $this->resolveBuilder();
     }
 
     /**
      * Get the query results with proper handling based on enabled features.
+      * @return \Illuminate\Database\Eloquent\Collection<*, *>
      */
     public function get(): Collection
     {
-        if ($this->state !== 'applied') {
-            throw new RuntimeException('You must call apply() before get()');
-        }
-
         if ($this->state === 'failed') {
             throw new RuntimeException('Filters failed to apply: '.$this->failureReason);
+        }
+
+        if ($this->state !== 'applied') {
+            throw new RuntimeException('You must call apply() before get()');
         }
 
         if ($this->hasFeature('memoryManagement')) {
             return $this->mockExecuteQueryWithMemoryManagement();
         }
 
-        return $this->getBuilder()->get();
+        return $this->resolveBuilder()->get();
     }
 
     /**
      * Public method that exposes the protected executeQueryWithMemoryManagement method
+      * @return \Illuminate\Database\Eloquent\Collection<*, *>
      */
     public function mockExecuteQueryWithMemoryManagement(): Collection
     {

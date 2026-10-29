@@ -3,6 +3,7 @@
 namespace Filterable\Console;
 
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -87,14 +88,14 @@ class MakeFilterCommand extends GeneratorCommand
      *
      * @param  string  $name
      *
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     * @throws FileNotFoundException
      */
     #[\Override]
     protected function buildClass($name): string
     {
         $stub = parent::buildClass($name);
 
-        if ($model = $this->option('model')) {
+        if (is_string($model = $this->option('model')) && $model !== '') {
             $stub = $this->replaceModel($stub, $model);
         }
 

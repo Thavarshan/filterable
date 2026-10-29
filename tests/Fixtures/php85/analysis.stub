@@ -1,0 +1,9 @@
+<?php
+
+// Static-analysis declarations for syntax loaded exclusively by PHP 8.5 tests.
+namespace Filterable\Tests\Fixtures\Php85;
+
+class CallableFilter extends \Filterable\Filter {}
+class FirstClassCallableFilter extends \Filterable\Filter {}
+function discardLazy(\Filterable\Filter $filter): void {}
+function intentionallyDiscardLazy(\Filterable\Filter $filter): void {}
