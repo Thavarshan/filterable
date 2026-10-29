@@ -1,6 +1,29 @@
 # Release Notes
 
-## [Unreleased](https://github.com/Thavarshan/filterable/compare/v3.1.0...HEAD)
+## [Unreleased](https://github.com/Thavarshan/filterable/compare/3.1.0...HEAD)
+
+## [v3.1.0](https://github.com/Thavarshan/filterable/compare/3.0.0...3.1.0) - 2026-10-29
+
+### Fixed
+
+- Isolate cached results and counts when a shared tenant connection switches between servers with identically named databases. Cache identity now fingerprints resolved driver, endpoint/port/socket, database, username, configured schema/search path and sanitized read/write configuration. Passwords and connection URLs are excluded; unidentified custom connections require an explicit `cache_context` namespace.
+- Honor `CachePolicy(results: false)` and `cacheResults(false)` without falling back to automatic result caching. Explicit disable bypasses result-cache reads and writes, including warm entries, while count caching remains independent.
+- Preserve current Eloquent/base query callback output and execution frequency by bypassing package caching for callback-bearing builders. Scoped query callbacks and eager loading are also handled without invoking or serializing executable closures during inspection.
+
+### Added
+
+- `autoCacheResults()` and `CachePolicy(results: null)` explicitly restore automatic result caching. Existing boolean setter signatures and protected property types remain compatible.
+- A self-contained README covering registration, attributes and legacy setters, lifecycle/reset, precedence, validation/transformation factories, Gate/row scope, limits, caching, scopes/query callbacks, optimization, streaming, logging/events/errors, vector search, generators and migration.
+- Executable README examples and regression coverage for tenant isolation, count-only caching, warm-cache callbacks and custom connections. Service CI verifies two MySQL servers sharing a database name with a shared Redis store.
+
+### Compatibility and validation
+
+- PHP 8.3–8.5 and Laravel 11–13 support is retained. This minor release adds explicit automatic-policy APIs alongside the caching corrections.
+- Local checks: strict lint, maximum-level static analysis with zero findings/no baseline, 222 tests and 700 assertions, plus focused source coverage.
+- Final PR checks passed all nine PHP/Laravel combinations, lowest dependencies, MySQL/Redis, PostgreSQL/pgvector/Redis and CodeQL. The README's actual quick-start classes/controller request, legacy filter and vector rejection example run in the suite.
+- Database cache identity changes naturally invalidate earlier entries. Continue to provide tenant/policy/session context in `cache_context` when configuration alone cannot identify application authorization state.
+
+Implemented in [PR #54](https://github.com/Thavarshan/filterable/pull/54), resolving #51, #52 and #53.
 
 ## [v3.0.0](https://github.com/Thavarshan/filterable/compare/2.1.2...3.0.0) - 2026-10-29
 
@@ -288,26 +311,3 @@ Implemented through [PR #50](https://github.com/Thavarshan/filterable/pull/50), 
 ## v1.0.0 - 2024-04-10
 
 Initial release.
-
-## [v3.1.0](https://github.com/Thavarshan/filterable/compare/3.0.0...v3.1.0) - 2026-10-29
-
-### Fixed
-
-- Isolate cached results and counts when a shared tenant connection switches between servers with identically named databases. Cache identity now fingerprints resolved driver, endpoint/port/socket, database, username, configured schema/search path and sanitized read/write configuration. Passwords and connection URLs are excluded; unidentified custom connections require an explicit `cache_context` namespace.
-- Honor `CachePolicy(results: false)` and `cacheResults(false)` without falling back to automatic result caching. Explicit disable bypasses result-cache reads and writes, including warm entries, while count caching remains independent.
-- Preserve current Eloquent/base query callback output and execution frequency by bypassing package caching for callback-bearing builders. Scoped query callbacks and eager loading are also handled without invoking or serializing executable closures during inspection.
-
-### Added
-
-- `autoCacheResults()` and `CachePolicy(results: null)` explicitly restore automatic result caching. Existing boolean setter signatures and protected property types remain compatible.
-- A self-contained README covering registration, attributes and legacy setters, lifecycle/reset, precedence, validation/transformation factories, Gate/row scope, limits, caching, scopes/query callbacks, optimization, streaming, logging/events/errors, vector search, generators and migration.
-- Executable README examples and regression coverage for tenant isolation, count-only caching, warm-cache callbacks and custom connections. Service CI verifies two MySQL servers sharing a database name with a shared Redis store.
-
-### Compatibility and validation
-
-- PHP 8.3–8.5 and Laravel 11–13 support is retained. This minor release adds explicit automatic-policy APIs alongside the caching corrections.
-- Local checks: strict lint, maximum-level static analysis with zero findings/no baseline, 222 tests and 700 assertions, plus focused source coverage.
-- Final PR checks passed all nine PHP/Laravel combinations, lowest dependencies, MySQL/Redis, PostgreSQL/pgvector/Redis and CodeQL. The README's actual quick-start classes/controller request, legacy filter and vector rejection example run in the suite.
-- Database cache identity changes naturally invalidate earlier entries. Continue to provide tenant/policy/session context in `cache_context` when configuration alone cannot identify application authorization state.
-
-Implemented in [PR #54](https://github.com/Thavarshan/filterable/pull/54), resolving #51, #52 and #53.
