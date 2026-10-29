@@ -5,6 +5,7 @@ namespace Filterable\Concerns;
 use Filterable\Contracts\Filter;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 trait InteractsWithCache
 {
@@ -32,7 +33,7 @@ trait InteractsWithCache
     public function setCacheExpiration(int $minutes): Filter
     {
         if ($minutes < 0) {
-            throw new \InvalidArgumentException('Cache TTL must be zero or greater.');
+            throw new InvalidArgumentException('Cache TTL must be zero or greater.');
         }
         $this->cacheExpiration = $minutes;
 
@@ -99,6 +100,7 @@ trait InteractsWithCache
                 $builder->toSql(), $builder->getBindings(), $builder->getEagerLoads() === [] ? [] : array_keys($builder->getEagerLoads()),
                 $this->options['cache_context'] ?? null,
                 $this->forUser?->getAuthIdentifier(),
+                ($this->actorSet ? $this->authorizationActor : $this->request->user())?->getAuthIdentifier(),
             ]));
         }
 

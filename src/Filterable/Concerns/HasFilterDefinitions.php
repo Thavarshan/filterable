@@ -11,6 +11,7 @@ use Filterable\Attributes\RequiresPermission;
 use Filterable\Attributes\TransformWith;
 use Filterable\Contracts\RuleFactory;
 use Filterable\Definitions\DefinitionRegistry;
+use Filterable\Definitions\Feature;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -40,13 +41,15 @@ trait HasFilterDefinitions
                         $this->shouldCacheCount = $defaults->count;
                         $this->cacheTags = $defaults->tags;
                         $this->features['caching'] = true;
+                        $featureOverrides['caching'] = true;
                     } elseif ($defaults instanceof FilterLimits) {
                         $this->maxFilters = $defaults->maxFilters;
                         $this->maxComplexity = $defaults->maxComplexity;
                         $this->features['rateLimit'] = true;
+                        $featureOverrides['rateLimit'] = true;
                     } else {
                         foreach ($defaults->features as $feature => $enabled) {
-                            if (! array_key_exists($feature, $this->features) || ! is_bool($enabled)) {
+                            if (! is_string($feature) || Feature::tryFrom($feature) === null || ! is_bool($enabled)) {
                                 throw new InvalidArgumentException("Invalid FilterFeatures entry [{$feature}].");
                             }
                             $this->features[$feature] = $enabled;

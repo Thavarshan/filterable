@@ -4,6 +4,7 @@ namespace Filterable\Concerns;
 
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use InvalidArgumentException;
 
 trait SupportsFilterChaining
 {
@@ -81,7 +82,7 @@ trait SupportsFilterChaining
     {
         $direction = strtolower($direction);
         if ($direction !== 'asc' && $direction !== 'desc') {
-            throw new \InvalidArgumentException('Order direction must be asc or desc.');
+            throw new InvalidArgumentException('Order direction must be asc or desc.');
         }
         $this->customFilters[] = function (Builder $query) use ($column, $direction) {
             return $query->orderBy($column, $direction);

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\LazyCollection;
+use InvalidArgumentException;
 use RuntimeException;
 
 trait ManagesMemory
@@ -233,7 +234,7 @@ trait ManagesMemory
         $size = $chunkSize ?? $this->options['chunk_size'] ?? 1000;
 
         if (! is_numeric($size)) {
-            throw new \InvalidArgumentException('Chunk size must be numeric.');
+            throw new InvalidArgumentException('Chunk size must be numeric.');
         }
 
         return max(1, (int) $size);

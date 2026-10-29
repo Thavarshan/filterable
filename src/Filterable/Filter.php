@@ -29,6 +29,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Traits\Conditionable;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -206,7 +207,7 @@ abstract class Filter implements FilterContract
             Event::dispatch(new FilterFailed($this, $this->resolveBuilder(), $e));
 
             // Always rethrow validation exceptions
-            if ($e instanceof ValidationException || $e instanceof AuthorizationException || $e instanceof \InvalidArgumentException) {
+            if ($e instanceof ValidationException || $e instanceof AuthorizationException || $e instanceof InvalidArgumentException) {
                 throw $e;
             }
 
@@ -455,36 +456,36 @@ abstract class Filter implements FilterContract
     {
         $defaults = config('filterable.defaults', []);
         if (! is_array($defaults)) {
-            throw new \InvalidArgumentException('Filterable defaults must be an array.');
+            throw new InvalidArgumentException('Filterable defaults must be an array.');
         }
         $features = $defaults['features'] ?? [];
         if (! is_array($features)) {
-            throw new \InvalidArgumentException('Filterable feature defaults must be an array.');
+            throw new InvalidArgumentException('Filterable feature defaults must be an array.');
         }
         foreach ($features as $feature => $enabled) {
             if (! is_string($feature) || ! is_bool($enabled) || ! array_key_exists($feature, $this->features)) {
-                throw new \InvalidArgumentException('Invalid Filterable feature default.');
+                throw new InvalidArgumentException('Invalid Filterable feature default.');
             }
             $this->features[$feature] = $enabled;
         }
         $options = $defaults['options'] ?? [];
         if (! is_array($options)) {
-            throw new \InvalidArgumentException('Filterable option defaults must be an array.');
+            throw new InvalidArgumentException('Filterable option defaults must be an array.');
         }
         foreach ($options as $key => $value) {
             if (! is_string($key)) {
-                throw new \InvalidArgumentException('Filterable option keys must be strings.');
+                throw new InvalidArgumentException('Filterable option keys must be strings.');
             }
             $this->options[$key] = $value;
         }
         $cache = $defaults['cache'] ?? [];
         if (! is_array($cache)) {
-            throw new \InvalidArgumentException('Filterable cache defaults must be an array.');
+            throw new InvalidArgumentException('Filterable cache defaults must be an array.');
         }
         $ttl = $cache['ttl'] ?? null;
         if ($ttl !== null) {
             if (! is_numeric($ttl) || (int) $ttl < 0) {
-                throw new \InvalidArgumentException('Cache TTL must be zero or greater.');
+                throw new InvalidArgumentException('Cache TTL must be zero or greater.');
             }
             $this->cacheExpiration = (int) $ttl;
         }

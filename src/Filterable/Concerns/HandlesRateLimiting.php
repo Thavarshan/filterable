@@ -4,6 +4,7 @@ namespace Filterable\Concerns;
 
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Support\Facades\App;
+use InvalidArgumentException;
 
 trait HandlesRateLimiting
 {
@@ -30,7 +31,7 @@ trait HandlesRateLimiting
     public function setMaxFilters(int $max): self
     {
         if ($max < 0) {
-            throw new \InvalidArgumentException('Maximum filters must be zero or greater.');
+            throw new InvalidArgumentException('Maximum filters must be zero or greater.');
         }
         $this->maxFilters = $max;
 
@@ -43,7 +44,7 @@ trait HandlesRateLimiting
     public function setMaxComplexity(int $max): self
     {
         if ($max < 0) {
-            throw new \InvalidArgumentException('Maximum complexity must be zero or greater.');
+            throw new InvalidArgumentException('Maximum complexity must be zero or greater.');
         }
         $this->maxComplexity = $max;
 

@@ -8,7 +8,7 @@ use Filterable\Filter;
 
 class CallableFilter extends Filter
 {
-    #[AsFilter('name'), TransformWith(static fn (string $value): string => $value |> trim(...) |> strtoupper(...))]
+    #[AsFilter('name'), TransformWith(static function (string $value): string { return $value |> trim(...) |> strtoupper(...); })]
     protected function name(string $value): void
     {
         $this->getBuilder()->where('name', $value);

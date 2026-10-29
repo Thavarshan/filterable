@@ -2,6 +2,8 @@
 
 namespace Filterable\Concerns;
 
+use InvalidArgumentException;
+
 trait OptimizesQueries
 {
     /**
@@ -70,12 +72,12 @@ trait OptimizesQueries
         // This will add an index hint in MySQL
         // Note: This is database-specific and may need adaptation
         if (! preg_match('/^[A-Za-z0-9_]+$/D', $index)) {
-            throw new \InvalidArgumentException('Invalid index name.');
+            throw new InvalidArgumentException('Invalid index name.');
         }
         $builder = $this->resolveBuilder();
         $table = $builder->getQuery()->from;
         if (! is_string($table)) {
-            throw new \InvalidArgumentException('Index hints require a named table.');
+            throw new InvalidArgumentException('Index hints require a named table.');
         }
         $builder->from($table." USE INDEX ({$index})");
 
