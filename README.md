@@ -122,6 +122,8 @@ class PostFilter extends Filter
 }
 ```
 
+**Backward compatibility:** The existing `Filterable\Traits\Filterable` trait remains fully supported and is not deprecated. Version 3.2 adds an optional `#[UseFilter]` alternative; existing models and calls such as `Post::filter($filter)` require no changes. See [the trait examples](#scopes-and-query-callbacks) to keep using that approach.
+
 Connect the filter to your model with `#[UseFilter]` (no trait required):
 
 ```php
@@ -658,7 +660,7 @@ For static analysis or IDEs that cannot discover runtime builder macros, a model
 
 ## Scopes and query callbacks
 
-The legacy model trait works on Laravel 11–13:
+The original `Filterable` model trait remains fully supported on Laravel 11–13:
 
 ```php
 class Post extends \Illuminate\Database\Eloquent\Model
@@ -669,6 +671,34 @@ class Post extends \Illuminate\Database\Eloquent\Model
 $query = Post::query()->filter(app(PostFilter::class), ['cache_context' => ['tenant' => $tenantId]]);
 $posts = $query->get();
 ```
+
+With the trait, continue passing the filter instance explicitly, including through controller injection:
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Filters\PostFilter;
+use App\Models\Post;
+
+class TraitPostController
+{
+    public function index(PostFilter $filter)
+    {
+        return Post::query()->filter($filter)->orderBy('id')->get();
+    }
+}
+```
+
+Both model styles are supported:
+
+| Model registration | Query usage | Filter resolution |
+| --- | --- | --- |
+| `use Filterable;` | `Post::filter($filter)` | Pass the instance explicitly, as before. |
+| `#[UseFilter(PostFilter::class)]` without a trait | `Post::filter()` | Resolve the declared filter through the container. |
+
+There is no required migration. Adding `UseFilter` to a model that still uses the trait keeps the trait's scope behavior, so the filter argument remains required. To opt into automatic resolution, replace the trait with the attribute and then omit the filter argument.
 
 Laravel 12+ offers an alternative native attributed scope trait:
 
