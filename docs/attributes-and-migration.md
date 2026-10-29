@@ -107,7 +107,11 @@ $filter->apply(Post::query());
 $posts = $filter->get();
 ```
 
-Result caching skips eager-load callbacks because closures cannot be represented safely in a cache key. Tags are used only on supporting stores. `clearCache()` removes result/count entries from the same tagged repository. `clearRelatedCaches()` flushes only supported tags, never an entire untagged store. TTL is in minutes and does not extend on reads. Consumer code owns invalidation and relevant authorization context; user ID alone is not a policy revision.
+Result caching has three modes: `cacheResults(true)` explicitly enables it, `cacheResults(false)` explicitly disables all result-cache reads/writes, and `autoCacheResults()` restores the heuristic. `CachePolicy(results: null)` selects automatic mode; its default `results: true` selects explicit caching. Count caching remains independent, including `CachePolicy(results: false, count: true)`.
+
+Builders with eager loading, Eloquent/base query callbacks or before-query callbacks bypass caching to preserve the current query's callback output and execution frequency. Scoped query clones are inspected without serializing or invoking their callbacks. Tags are used only on supporting stores. `clearCache()` removes result/count entries from the same tagged repository. `clearRelatedCaches()` flushes only supported tags, never an entire untagged store. TTL is in minutes and does not extend on reads.
+
+Connection identity fingerprints driver, endpoint/port/socket, database, username, configured schema/search path, prefix and sanitized read/write configuration. Passwords, connection URLs and arbitrary PDO options are excluded. A shared logical alias pointing to databases with the same name on different servers no longer shares entries. Consumer code still owns session-level tenant/RLS identity, policy/locale/embedding context and invalidation; user ID alone is not a policy revision. Custom connections without Laravel's resolved configuration require an explicit database namespace in `cache_context`.
 
 ## Framework/native integrations
 

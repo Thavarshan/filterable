@@ -62,6 +62,13 @@ jobs:
           MYSQL_DATABASE: test_filterable
         ports: ['3306:3306']
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+      mysql_peer:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: test_filterable
+        ports: ['3307:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
       postgres:
         image: pgvector/pgvector:pg17
         env:
@@ -82,7 +89,7 @@ jobs:
           coverage: none
       - run: composer require 'laravel/framework:^13.0' 'orchestra/testbench:^11.0' --no-update --no-interaction
       - run: composer update --prefer-stable --prefer-dist --no-interaction --with-all-dependencies
-      - run: composer test -- --filter='ServiceIntegrationTest|VectorSearchTest'
+      - run: composer test -- --filter='ServiceIntegrationTest|VectorSearchTest|TenantCacheIsolationTest|CachePolicyRegressionTest'
         env:
           FILTERABLE_TEST_DB: ${{ matrix.database }}
           DB_HOST: 127.0.0.1
