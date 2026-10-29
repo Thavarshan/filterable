@@ -3,6 +3,7 @@
 namespace Filterable\Tests\Integration;
 
 use Filterable\Tests\TestCase;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\SQLiteConnection;
 use Illuminate\Http\Request;
@@ -13,6 +14,24 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 class TenantCacheIsolationTest extends TestCase
 {
+    public function test_manual_connection_without_configuration_requires_an_explicit_namespace(): void
+    {
+        $connection = new SQLiteConnection(new PDO('sqlite::memory:'), ':memory:');
+        $query = new Builder($connection->query());
+        $query->setModel(new TenantCacheRecord);
+        $filter = new CacheRegressionFilter(new Request);
+        $filter->apply($query);
+        try {
+            $filter->cacheKey();
+            $this->fail('Unidentified custom connection was accepted without cache_context');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertStringContainsString('cache_context', $exception->getMessage());
+        }
+        $filter->setOption('cache_context', ['tenant' => 0]);
+        $this->assertStringStartsWith('filters:', $filter->cacheKey());
+        $this->assertSame([], $connection->getQueryLog(), 'Identity requires no database lookup');
+    }
+
     /** @return array<string, array{?string}> */
     public static function modelConnections(): array
     {

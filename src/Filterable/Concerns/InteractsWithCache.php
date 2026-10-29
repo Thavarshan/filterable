@@ -119,18 +119,15 @@ trait InteractsWithCache
     protected function connectionCacheIdentity(): array
     {
         $connection = $this->resolveBuilder()->getConnection();
-        if (! $connection instanceof Connection) {
-            if (empty($this->options['cache_context'])) {
+        $configuration = $connection instanceof Connection ? $connection->getConfig() : null;
+        if (! is_array($configuration) || ! is_string($configuration['driver'] ?? null)) {
+            if (! isset($this->options['cache_context']) || $this->options['cache_context'] === [] || $this->options['cache_context'] === '') {
                 throw new InvalidArgumentException('Custom connections require an explicit cache_context database namespace.');
             }
 
             return ['database' => $connection->getDatabaseName()];
         }
         $keys = array_flip(['name', 'driver', 'host', 'port', 'unix_socket', 'database', 'username', 'schema', 'search_path', 'charset', 'collation', 'prefix']);
-        $configuration = $connection->getConfig();
-        if (! is_array($configuration)) {
-            throw new InvalidArgumentException('Caching requires resolved connection configuration.');
-        }
         $identity = array_intersect_key($configuration, $keys);
         foreach (['read', 'write'] as $mode) {
             if (isset($configuration[$mode]) && is_array($configuration[$mode])) {
