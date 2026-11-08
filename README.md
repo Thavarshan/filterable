@@ -41,13 +41,15 @@ This README is the complete usage guide. Examples below use an application `Post
 
 | Capability | Requirements |
 | --- | --- |
-| Core filters, package attributes, existing properties/setters | PHP 8.3–8.5; Laravel 11, 12, or 13 |
-| Model `#[UseFilter]` attribute (no trait) | Laravel 11 through 13 |
-| Legacy model scope | Laravel 11–13 |
+| Core filters, package attributes, existing properties/setters | PHP 8.3–8.5; Laravel 12 or 13 |
+| Model `#[UseFilter]` attribute (no trait) | Laravel 12 and 13 |
+| Legacy model scope | Laravel 12–13 |
 | Native attributed model scope | Laravel 12+ |
 | Inline callable attribute arguments, pipe syntax, native NoDiscard warnings | PHP 8.5 |
 | Optional vector recipe | Laravel 13 and PostgreSQL with pgvector; Laravel also supports MariaDB 11.7+ vector queries |
 | Caching | A Laravel cache repository when the caching concern is enabled |
+
+Filterable 4.0 removes Laravel 11 support as a breaking compatibility change. Applications must upgrade to Laravel 12 or 13 before upgrading this package. Releases through 3.2.0 retain their declared Laravel 11 range, but Laravel 11 itself no longer receives upstream security fixes. See the [Laravel 11 support policy](https://laravel.com/docs/11.x/releases#support-policy) and [migration notes](docs/attributes-and-migration.md#version-40-laravel-support).
 
 ```bash
 composer require jerome/filterable
@@ -633,7 +635,7 @@ $filter->clearRelatedCaches(Post::class);
 
 ## Model filter attributes
 
-On Laravel 11 through 13, `#[UseFilter(PostFilter::class)]` connects a model to its default filter without a model trait. Use `::class` to pass the class name. The package service provider registers the Eloquent `filter()` macro automatically.
+On Laravel 12 and 13, `#[UseFilter(PostFilter::class)]` connects a model to its default filter without a model trait. Use `::class` to pass the class name. The package service provider registers the Eloquent `filter()` macro automatically.
 
 ```php
 // Resolve the declared filter with the current request.
@@ -660,7 +662,7 @@ For static analysis or IDEs that cannot discover runtime builder macros, a model
 
 ## Scopes and query callbacks
 
-The original `Filterable` model trait remains fully supported on Laravel 11–13:
+The original `Filterable` model trait remains fully supported on Laravel 12–13:
 
 ```php
 class Post extends \Illuminate\Database\Eloquent\Model
@@ -981,7 +983,7 @@ $posts = $filter->runQuery(Post::query());
 
 Adapt the fixed dimension and embedding column to your application. Inputs cannot choose database identifiers/operators. Similarity defaults to relevance ordering; pass `order: false` to `whereVectorSimilarTo()` before applying an explicit application-controlled `orderBy()`. Include embedding model/version and tenant/policy context in `cache_context` when caching, and invalidate when embeddings change.
 
-Text-to-embedding conversion may be supplied through an application service/transformer; validate its final vector before query mutation. The package does not call an AI provider. Laravel 11/12 and unsupported drivers should omit this recipe. PostgreSQL/pgvector is exercised in CI; Laravel also documents MariaDB 11.7+ support. See [Laravel vector clauses](https://laravel.com/docs/13.x/queries#vector-similarity-clauses) and the [integration fixture](tests/Fixtures/VectorSearchFilter.php).
+Text-to-embedding conversion may be supplied through an application service/transformer; validate its final vector before query mutation. The package does not call an AI provider. Laravel 12 and unsupported drivers should omit this recipe. PostgreSQL/pgvector is exercised in CI; Laravel also documents MariaDB 11.7+ support. See [Laravel vector clauses](https://laravel.com/docs/13.x/queries#vector-similarity-clauses) and the [integration fixture](tests/Fixtures/VectorSearchFilter.php).
 
 ## Generators and application stubs
 
@@ -1055,7 +1057,7 @@ composer fix                   # Duster formatting with a timestamped log.
 php bin/benchmark-definitions.php
 ```
 
-CI exercises PHP 8.3/8.4/8.5 × Laravel 11/12/13, lowest dependencies, MySQL/Redis, PostgreSQL/pgvector/Redis, and two MySQL servers sharing a database name. Ordinary tests use SQLite; service jobs explicitly select real connections. Callback/cache policy tests and generated examples run through real requests, SQL/bindings, and returned records. Optional AI calls are never required.
+CI exercises PHP 8.3/8.4/8.5 × Laravel 12/13, lowest dependencies, MySQL/Redis, PostgreSQL/pgvector/Redis, and two MySQL servers sharing a database name. Ordinary tests use SQLite; service jobs explicitly select real connections. Callback/cache policy tests and generated examples run through real requests, SQL/bindings, and returned records. Optional AI calls are never required.
 
 Source is under `src/Filterable/`, configuration under `config/`, generator stubs under `src/Filterable/Console/stubs/`, and Testbench tests under `tests/`. Follow [AGENTS.md](AGENTS.md) for contribution conventions. Include capability changes, compatibility decisions, and verification commands in a PR; keep scripts in `bin/` executable.
 
