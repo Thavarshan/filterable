@@ -61,6 +61,9 @@
         "test": "chmod +x bin/test.sh && ./bin/test.sh"
     },
     "config": {
+        "platform": {
+            "php": "8.3.0"
+        },
         "sort-packages": true,
         "allow-plugins": {
             "phpunit/phpunit-plugin": true,
