@@ -1,4 +1,10 @@
-# Attribute API and migration to 3.0
+# Attribute API and migration notes
+
+## Version 4.0 Laravel support
+
+Filterable 4.0 drops Laravel 11 compatibility. Applications must upgrade to Laravel 12 or 13 before upgrading this package. This is a breaking compatibility change; it does not remove a Filterable runtime API. Laravel 11's upstream security support ended on March 12, 2026. See the [Laravel support policy](https://laravel.com/docs/11.x/releases#support-policy).
+
+## Version 3.0 migration
 
 Version 3.0 retains PHP 8.3–8.5 and Laravel 11–13. It is a major release because registration and permission enforcement are stricter: programmatic inputs must name registered handlers, guests no longer bypass declared permissions, invalid definitions fail before query mutation, and authorization/complexity rejection always throws. Existing property and setter APIs remain available. The protected `applyFilterablesWithCache()` hook now mutates the query and returns void; move result caching customizations to `executeQueryWithCaching()`.
 
@@ -117,10 +123,10 @@ Connection identity fingerprints driver, endpoint/port/socket, database, usernam
 
 | Feature | Compatibility |
 | --- | --- |
-| Package attributes, readonly definitions, native method Override | PHP 8.3+, Laravel 11–13 |
-| Existing `Traits\Filterable` / `Contracts\Filterable` | Laravel 11–13 |
+| Package attributes, readonly definitions, native method Override | PHP 8.3+, Laravel 12–13 |
+| Existing `Traits\Filterable` / `Contracts\Filterable` | Laravel 12–13 |
 | Optional `Traits\AttributeFilterable` | Laravel 12+ `#[Scope]`; use instead of the legacy trait, not both |
-| `new QueryFilter($filter)` passed to Eloquent `tap()` | Laravel 11–13; mutates without execution |
+| `new QueryFilter($filter)` passed to Eloquent `tap()` | Laravel 12–13; mutates without execution |
 | Eloquent `pipe(new QueryFilter($filter))` | Frameworks exposing native `pipe()`; returns a builder, not cached results |
 | Inline callable attribute arguments and pipe syntax | PHP 8.5 only |
 | Native `NoDiscard` warnings | PHP 8.5; annotations remain inert on 8.3/8.4 |
@@ -142,6 +148,6 @@ Use a static anonymous function, with no captured variables. First-class callabl
 
 `make:filter PostFilter --attributes` emits portable method attributes. Combine with `--basic` or `--model=Post`, application `stubs/filter.attributes.{basic,default,model}.stub` overrides, and `--force`. `--php85` explicitly selects callable variants and fails before writing on older runtimes. Their application override names end in `.php85.stub`. Legacy stub names and options remain supported.
 
-Run `composer install`, `composer lint`, `composer analyse` and `composer test`. Static analysis runs at maximum level across source and tests without a baseline or ignored findings. CI exercises the PHP 8.3/8.4/8.5 × Laravel 11/12/13 matrix, lowest dependencies, MySQL/Redis and PostgreSQL/pgvector/Redis. Service jobs explicitly select their driver through `FILTERABLE_TEST_DB`; ordinary tests use SQLite. The optional-service tests skip only outside these jobs. See the workflow for reproducible local connection variables.
+Run `composer install`, `composer lint`, `composer analyse` and `composer test`. Static analysis runs at maximum level across source and tests without a baseline or ignored findings. CI exercises the PHP 8.3/8.4/8.5 × Laravel 12/13 matrix, lowest dependencies, MySQL/Redis and PostgreSQL/pgvector/Redis. Service jobs explicitly select their driver through `FILTERABLE_TEST_DB`; ordinary tests use SQLite. The optional-service tests skip only outside these jobs. See the workflow for reproducible local connection variables.
 
 Upstream references: [Laravel scopes](https://laravel.com/docs/13.x/eloquent#local-scopes), [query callbacks](https://laravel.com/docs/13.x/queries#reusable-query-components), [Gate](https://laravel.com/docs/13.x/authorization), [PHP 8.5 features](https://www.php.net/manual/en/migration85.new-features.php), [NoDiscard](https://www.php.net/manual/en/class.nodiscard.php).
