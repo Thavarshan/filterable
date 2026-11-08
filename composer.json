@@ -45,7 +45,7 @@
         "ext-json": "*",
         "larastan/larastan": "^3.1",
         "laravel/pint": "^1.21",
-        "mockery/mockery": "^1.4",
+        "mockery/mockery": "^1.6.15",
         "nunomaduro/phpinsights": "^2.11",
         "orchestra/testbench": "10.*|11.*",
         "phpstan/phpstan-mockery": "^2.0",
