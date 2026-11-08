@@ -1,6 +1,6 @@
 # Optional Laravel 13 vector search
 
-This recipe accepts a precomputed numeric vector, so it performs no AI calls and needs no AI SDK dependency. Use Laravel 13 with PostgreSQL plus pgvector. Laravel also supports MariaDB 11.7+ vector clauses, but this package's database integration fixture verifies PostgreSQL. Laravel 11/12, SQLite and ordinary MySQL users should keep ordinary filter handlers and omit this recipe.
+This recipe accepts a precomputed numeric vector, so it performs no AI calls and needs no AI SDK dependency. Use Laravel 13 with PostgreSQL plus pgvector. Laravel also supports MariaDB 11.7+ vector clauses, but this package's database integration fixture verifies PostgreSQL. Laravel 12, SQLite and ordinary MySQL users should keep ordinary filter handlers and omit this recipe.
 
 Copy [VectorSearchFilter](../tests/Fixtures/VectorSearchFilter.php) into your application and adjust its namespace, fixed `embedding` column and dimension (the fixture uses three). It demonstrates `AsFilter`, colocated rules and whole-payload validation before any query mutation. The request shape is:
 
