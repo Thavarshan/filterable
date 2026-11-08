@@ -2,6 +2,10 @@
 
 ## [Unreleased](https://github.com/Thavarshan/filterable/compare/3.2.0...HEAD)
 
+### Breaking
+
+- Remove Laravel 11 compatibility for the next major release. Laravel 11 no longer receives upstream security fixes; upgrade applications to Laravel 12 or 13 before upgrading Filterable.
+
 ## [v3.2.0](https://github.com/Thavarshan/filterable/compare/3.1.0...3.2.0) - 2026-10-29
 
 ### Added
