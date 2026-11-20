@@ -115,7 +115,6 @@ abstract class Filter implements FilterContract
 
         if ($logger) {
             $this->setLogger($logger);
-            $this->enableFeature('logging');
         }
     }
 
@@ -147,11 +146,9 @@ abstract class Filter implements FilterContract
         }
 
         // Log start of filter application if logging is enabled
-        if ($this->hasFeature('logging')) {
-            $this->logInfo('Beginning filter application', [
-                'options' => $this->options,
-            ]);
-        }
+        $this->logInfo('Beginning filter application', [
+            'options' => $this->options,
+        ]);
 
         try {
             // Security checks (only if the features are enabled)
